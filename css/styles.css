@@ -1,0 +1,22 @@
+.simple-read {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100vw;
+    height: 100%;
+    z-index: 9999999999;
+    background: #fff;
+    transition: visibility .5s, opacity .5s, transform .5s;
+    border: none;
+}
+
+.simple-read_hide {
+    visibility: hidden;
+    opacity: 0;
+    transform: translateY(30px);
+}
+
+.disable {
+    height: 100vh;
+    overflow: hidden;
+}
