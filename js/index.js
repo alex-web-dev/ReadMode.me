@@ -1,7 +1,3 @@
-//Добавить bg fff - page item
-//Добавить паддинги у page item убрать у page wrapper or
-//Добавить номер страницы
-//Подумать о реализации переключения по страницам (1 2 3 ... n-1 n)
 if(!document.querySelector('.simple-read')) {
   createFrame();
 }
@@ -139,12 +135,12 @@ function appendFrameTemplate() {
   });
 }
 
-function createElem(nameClass, html) {
-  const elem = document.createElement('div');
-  elem.className = nameClass;
+function createElem(options) {
+  const elem = document.createElement(options.tag);
+  elem.className = options.nameClass;
 
-  if (html) {
-    elem.innerHTML = html;
+  if (options.html) {
+    elem.innerHTML = options.html;
   }
 
   return elem;
@@ -152,8 +148,14 @@ function createElem(nameClass, html) {
 
 function generateBookPages($article, maxPageHeight) {
   let sumHeight = 0;
-  let $pagesList = createElem('pages__list');
-  let $bookPage = createElem('pages__item');
+  let $pagesList = createElem({
+    tag: 'div', 
+    nameClass: 'pages__list'
+  });
+  let $bookPage = createElem({
+    tag: 'div', 
+    nameClass: 'pages__item'
+  });
   
   clone($article);
 
@@ -172,7 +174,10 @@ function generateBookPages($article, maxPageHeight) {
 
       if ($elem.tagName === 'IMG' && (400 + sumHeight) > maxPageHeight) {
         $pagesList.appendChild($bookPage);
-        $bookPage = createElem('pages__item');
+        $bookPage = createElem({
+          tag: 'div',
+          nameClass: 'pages__item'}
+        );
         sumHeight = 400;
         $bookPage.appendChild($elem.cloneNode(true));
         return;
@@ -185,7 +190,10 @@ function generateBookPages($article, maxPageHeight) {
         sumHeight += getElemFullHeight($elem);      
       } else {
         $pagesList.appendChild($bookPage);
-        $bookPage = createElem('pages__item');
+        $bookPage = createElem({
+          tag: 'div',
+          nameClass: 'pages__item'}
+        );
         $bookPage.appendChild($elem.cloneNode(true));
         sumHeight = getElemFullHeight($elem);
       }
@@ -196,17 +204,27 @@ function generateBookPages($article, maxPageHeight) {
     $pagesList.appendChild($bookPage);
   }
 
-  let $pagesWrapper = createElem('pages__wrapper');
+  let $pagesWrapper = createElem({
+    tag: 'div',
+    nameClass: 'pages__wrapper'
+  });
   $pagesWrapper.appendChild($pagesList);
 
-  let $pages = createElem(
-    'pages',
-    `<button class="pages__prev" disabled><img src="${getPath('images/angle-left.svg')}"></button>
-     <button class="pages__next"><img src="${getPath('images/angle-right.svg')}"></button>
-     <span class="pages__count">1/15</span>`);
-  $pages.appendChild($pagesWrapper)
+  let $pages = createElem({
+    tag: 'div', 
+    nameClass: 'pages',
+    html: `
+      <button class="pages__prev" disabled><img src="${getPath('images/angle-left.svg')}"></button>
+      <button class="pages__next"><img src="${getPath('images/angle-right.svg')}"></button>
+      <span class="pages__count">1/15</span>`
+  });
+  $pages.appendChild($pagesWrapper);
 
   return $pages;
+}
+
+function voiceText(text) {
+  speechSynthesis.speak(new SpeechSynthesisUtterance(text));
 }
 
 function getElemFullHeight($elem) {
@@ -227,9 +245,12 @@ function getUI() {
   const ui = document.createElement('div');
   ui.className = 'interface';
 
-  const closeBtn = document.createElement('button');
-  closeBtn.className = 'interface__btn interface__btn_close';
-  closeBtn.innerHTML = `<img src="${getPath('images/close.svg')}">`;
+  const closeBtn = createElem({
+    tag: 'button',
+    nameClass: 'interface__btn interface__btn_close',
+    html: `<img src="${getPath('images/close.svg')}">`
+  });
+
   closeBtn.addEventListener('click', () => {
     deleteFrame();
   });
