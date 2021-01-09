@@ -201,7 +201,8 @@ function generateBookPages($article, maxPageHeight) {
 
   let $pages = createElem(
     'pages',
-    `<button class="pages__prev" disabled>←</button><button class="pages__next">→</button>
+    `<button class="pages__prev" disabled><img src="${getPath('images/angle-left.svg')}"></button>
+     <button class="pages__next"><img src="${getPath('images/angle-right.svg')}"></button>
      <span class="pages__count">1/15</span>`);
   $pages.appendChild($pagesWrapper)
 
