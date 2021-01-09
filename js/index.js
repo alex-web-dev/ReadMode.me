@@ -55,12 +55,17 @@ function appendFrameTemplate() {
   const $blockContent = document.createElement('div');
   $blockContent.className = 'simple-read__content';
 
-  $blockContent.innerHTML += `<h2>${document.title}</h2>`;
+  $blockContent.innerHTML += `<h2 class="simple-read__title">${document.title}</h2>`;
 
-  const $allArticles = document.querySelectorAll('article');
-  $allArticles.forEach(($article) => {
-    $blockContent.innerHTML += `<article>${$article.innerHTML}</article>`;
-  });
+  const $article = document.querySelector('article');
+  let $pages;
+  let pageHeight = 750;
+  if($article) {
+    $pages = generateBookPages($article, pageHeight);
+
+    $blockContent.appendChild($pages);
+  }
+
 
   $wrapper.appendChild($blockContent);
   $blockBody.appendChild($wrapper);
@@ -69,7 +74,7 @@ function appendFrameTemplate() {
   $iframe.className = 'simple-read simple-read_hide';
   setTimeout(() => {
     $iframe.classList.remove('simple-read_hide');
-  }, 200);
+  }, 600);
 
   document.body.appendChild($iframe);
 
@@ -82,15 +87,170 @@ function appendFrameTemplate() {
   const $interface = getUI();
   iframeDocument.body.appendChild($interface);
   iframeDocument.body.appendChild($blockBody);
+
+  if (!$pages) {
+    return;
+  }
+
+  let thisPageNum = 0;
+  const pageWidth = 810;
+  const pagesNum = iframeDocument.querySelectorAll('.pages__item').length;
+  const $pagesNextBtn = iframeDocument.querySelector('.pages__next');
+  const $pagesPrevBtn = iframeDocument.querySelector('.pages__prev');
+  const $pagesList = iframeDocument.querySelector('.pages__list');
+  const $pagesCount = iframeDocument.querySelector('.pages__count');
+
+  $pagesCount.innerHTML = `${thisPageNum + 1}/${pagesNum}`;
+
+  $pagesNextBtn.addEventListener('click', function() {
+    $pagesPrevBtn.removeAttribute('disabled');
+    
+    if (thisPageNum >= pagesNum - 1) {
+      return;
+    }
+
+
+    if (thisPageNum >= pagesNum - 2) {
+      $pagesNextBtn.setAttribute('disabled', '');
+    }
+
+    $pagesList.style.transform = `translateX(${++thisPageNum * -pageWidth}px)`;
+
+    $pagesCount.innerHTML = `${thisPageNum + 1}/${pagesNum}`;
+  });
+
+  $pagesPrevBtn.addEventListener('click', function() {
+    $pagesNextBtn.removeAttribute('disabled');
+    if (thisPageNum <= 0) {
+      return;
+    }
+
+    if (thisPageNum <= 1) {
+      $pagesPrevBtn.setAttribute('disabled', '');
+    }
+
+    $pagesList.style.transform = `translateX(${--thisPageNum * -pageWidth}px)`;
+
+    $pagesCount.innerHTML = `${thisPageNum + 1}/${pagesNum}`;
+  });
+}
+
+function createElem(options) {
+  const elem = document.createElement(options.tag);
+  elem.className = options.nameClass;
+
+  if (options.html) {
+    elem.innerHTML = options.html;
+  }
+
+  return elem;
+}
+
+function generateBookPages($article, maxPageHeight) {
+  let sumHeight = 0;
+  let $pagesList = createElem({
+    tag: 'div', 
+    nameClass: 'pages__list'
+  });
+  let $bookPage = createElem({
+    tag: 'div', 
+    nameClass: 'pages__item'
+  });
+  
+  clone($article);
+
+  function clone($article) {
+    [...$article.children].forEach(($elem) => {
+      if ($elem.tagName === 'PRE') {
+        $bookPage.appendChild($elem.cloneNode(true));
+        sumHeight += getElemFullHeight($elem);     
+        return;
+      }
+  
+      if ($elem.className.indexOf('hljs') !== -1 || $elem.tagName === 'CODE' ||
+          $elem.tagName === 'BR') {
+        return;
+      }
+
+      if ($elem.tagName === 'IMG' && (400 + sumHeight) > maxPageHeight) {
+        $pagesList.appendChild($bookPage);
+        $bookPage = createElem({
+          tag: 'div',
+          nameClass: 'pages__item'}
+        );
+        sumHeight = 400;
+        $bookPage.appendChild($elem.cloneNode(true));
+        return;
+      }
+  
+      if (getElemFullHeight($elem) > maxPageHeight) {
+        clone($elem);
+      } else if ( (sumHeight + getElemFullHeight($elem)) <= maxPageHeight ) {
+        $bookPage.appendChild($elem.cloneNode(true));
+        sumHeight += getElemFullHeight($elem);      
+      } else {
+        $pagesList.appendChild($bookPage);
+        $bookPage = createElem({
+          tag: 'div',
+          nameClass: 'pages__item'}
+        );
+        $bookPage.appendChild($elem.cloneNode(true));
+        sumHeight = getElemFullHeight($elem);
+      }
+    });
+  }
+
+  if ($bookPage.innerHTML) {
+    $pagesList.appendChild($bookPage);
+  }
+
+  let $pagesWrapper = createElem({
+    tag: 'div',
+    nameClass: 'pages__wrapper'
+  });
+  $pagesWrapper.appendChild($pagesList);
+
+  let $pages = createElem({
+    tag: 'div', 
+    nameClass: 'pages',
+    html: `
+      <button class="pages__prev" disabled><img src="${getPath('images/angle-left.svg')}"></button>
+      <button class="pages__next"><img src="${getPath('images/angle-right.svg')}"></button>
+      <span class="pages__count">1/15</span>`
+  });
+  $pages.appendChild($pagesWrapper);
+
+  return $pages;
+}
+
+function voiceText(text) {
+  speechSynthesis.speak(new SpeechSynthesisUtterance(text));
+}
+
+function getElemFullHeight($elem) {
+  const style = window.getComputedStyle($elem);
+  const margins = parseFloat(style.marginTop) + parseFloat(style.marginBottom);
+
+  return $elem.offsetHeight + margins;
+}
+
+function createBookPage() {
+  const $page = document.createElement('div');
+  $page.className = 'page';
+
+  return $page;
 }
 
 function getUI() {
   const ui = document.createElement('div');
   ui.className = 'interface';
 
-  const closeBtn = document.createElement('button');
-  closeBtn.className = 'interface__btn interface__btn_close';
-  closeBtn.innerHTML = `<img src="${getPath('images/close.svg')}">`;
+  const closeBtn = createElem({
+    tag: 'button',
+    nameClass: 'interface__btn interface__btn_close',
+    html: `<img src="${getPath('images/close.svg')}">`
+  });
+
   closeBtn.addEventListener('click', () => {
     deleteFrame();
   });
