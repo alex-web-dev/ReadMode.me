@@ -40,10 +40,16 @@ a:hover {
     color: #86bef1;
 }
 
-img {
+img:not([class*="user"]) {
     max-width: 100%;
-    max-height: 400px;
+    max-height: 320px;
     object-fit: contain;
+    margin: 10px auto;
+    display: block;
+}
+
+img + a {
+    display: block;
 }
 
 h1 {
@@ -55,18 +61,19 @@ h2.simple-read__title {
     margin: 0;
 }
 
-figcaption {
-    margin-top: 15px;
-}
-
 li {
     margin: 10px 0;
+}
+
+i {
+    display: block;
 }
 
 .interface {
     position: fixed;
     right: 15px;
     top: 15px;
+    display: flex;
 }
 
 .interface__btn {
@@ -83,9 +90,33 @@ li {
     background: none;
 }
 
+.interface__btn:not(:first-child) {
+    margin-left: 15px;
+}
+
 .interface__btn:hover {
     border-color: #333;
     color: #333;
+}
+
+.interface__btn_hide {
+}
+
+.interface__btn_voice {
+    transition: border .3s, outline .3s;
+}
+
+.interface__btn_voice path {
+    transition: fill .3s;
+}
+
+.interface__btn_voice[data-voice="active"] {
+    border-color: #e2be39;
+    outline-color: #e2be39;
+}
+
+.interface__btn_voice[data-voice="active"] path {
+    fill: #e2be39;
 }
 
 .pages {
@@ -110,12 +141,14 @@ li {
     min-width: 810px;
     overflow-x: auto;
     padding: 15px 30px;
+    margin-bottom: 30px;
     background: #ffffff;
 }
 
 .pages__prev, .pages__next {
-    position: absolute;
-    top: 300px;
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
     background: none;
     border: 1px solid #888;
     transition: border .3s;
@@ -138,17 +171,17 @@ li {
 }
 
 .pages__prev {
-    left: -80px;
+    left: 480px;
 }
 
 .pages__next {
-    right: -80px;
+    right: 480px;
 }
 
 .pages__count {
-    top: -71px;
-    right: 10px;
-    position: absolute;
+    top: 35px;
+    right: 485px;
+    position: fixed;
     z-index: 1;
     color: #777;
     font-family: 'Open Sans', sans-serif;
