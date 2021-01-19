@@ -336,7 +336,7 @@ function getVoiceBtn(doc) {
       itemCodeTags.forEach(codeTag => codeTag.remove());
 
       const text = activePageClone.innerText;
-      voiceText(text, doc);
+      voiceStart(text, doc);
       voiceBtn.setAttribute('data-voice', 'active');
     }
     
@@ -370,7 +370,7 @@ function voiceResume() {
   synth.resume();
 }
 
-function voiceText(text, doc) {
+function voiceStart(text, doc) {
   const length = 3399;
   text = text.substring(0, length);
   
