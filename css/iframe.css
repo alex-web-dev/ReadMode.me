@@ -1,7 +1,6 @@
 body {
     font-family: 'Merriweather', sans-serif;
     font-size: 16px;
-    background: #f1f1f1;
 }
 
 [class*="inline"] {
@@ -14,17 +13,18 @@ body {
 }
 
 .wrapper {
-    max-width: 840px;
+    max-width: 640px;
     padding: 0 15px;
     margin: 0 auto;
 }
 
 .simple-read__body {
-    padding-top: 30px;
+    padding-top: 50px;
 }
 
 .simple-read__content {
-    background: #ffffff;
+    position: relative;
+    z-index: 1;
 }
 
 p {
@@ -40,39 +40,21 @@ a:hover {
     color: #86bef1;
 }
 
-img:not([class*="user"]) {
+img {
     max-width: 100%;
-    max-height: 320px;
-    object-fit: contain;
-    margin: 10px auto;
-    display: block;
-}
-
-img + a {
-    display: block;
+    height: auto;
 }
 
 h1 {
     font-size: 1.8em;
 }
 
-h2.simple-read__title {
-    padding: 30px 45px 15px 30px;
-    margin: 0;
-}
-
-li {
-    margin: 10px 0;
-}
-
-i {
-    display: block;
-}
-
 .interface {
     position: fixed;
-    right: 15px;
+    right: 0;
     top: 15px;
+    width: 100%;
+    padding: 0 15px;
     display: flex;
 }
 
@@ -90,99 +72,113 @@ i {
     background: none;
 }
 
-.interface__btn:not(:first-child) {
-    margin-left: 15px;
-}
-
 .interface__btn:hover {
     border-color: #333;
     color: #333;
 }
 
-.interface__btn_hide {
+.interface__btn:not(:first-child) {
+    margin-left: 15px;
 }
 
-.interface__btn_voice {
-    transition: border .3s, outline .3s;
+.interface__btn_bookmarks_active {
+    border-color: #c74325;
+    outline-color: #c74325;
 }
 
-.interface__btn_voice path {
-    transition: fill .3s;
+.interface__btn_bookmarks_active path:not([fill="none"]) {
+    fill: #c74325;
 }
 
-.interface__btn_voice[data-voice="active"] {
-    border-color: #e2be39;
-    outline-color: #e2be39;
+.interface__btn_bookmarks_active:hover {
+    border-color: #c74325;
 }
 
-.interface__btn_voice[data-voice="active"] path {
-    fill: #e2be39;
+.interface__btn_bookmarks-popup {
+    margin-right: auto;
+    font-size: 16px;
+    border: none;
+    width: auto;
+    outline: none;
 }
 
-.pages {
-    position: relative;
-    max-height: 1000px;
+.bookmarks {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    left: 0;
+    top: 0;
+    transition: opacity .3s, visibility .3s;
+    z-index: 2;
 }
 
-.pages__wrapper {
-    overflow: hidden;
-    width: 810px;
+.bookmarks_hide {
+    opacity: 0;
+    visibility: hidden;
 }
 
-.pages__list {
-    display: flex;
-    align-items: flex-start;
-    width: 9999px;
-    transition: transform .5s;
-}
-
-.pages__item {
-    width: 810px;
-    min-width: 810px;
-    overflow-x: auto;
-    padding: 15px 30px;
-    margin-bottom: 30px;
+.bookmarks__content {
+    position: absolute;
     background: #ffffff;
-}
-
-.pages__prev, .pages__next {
-    position: fixed;
+    padding: 15px;
+    border: 1px solid #ddd;
+    width: 610px;
+    height: 350px;
+    left: 50%;
     top: 50%;
-    transform: translateY(-50%);
-    background: none;
-    border: 1px solid #888;
-    transition: border .3s;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-}
-
-.pages__prev:hover, .pages__next:hover {
-    border-color: #222;
-}
-
-.pages__prev:disabled, .pages__next:disabled{
-    opacity: 0.5;
-    cursor: default;
-    border-color: #aaa;
-}
-
-.pages__prev {
-    left: 480px;
-}
-
-.pages__next {
-    right: 480px;
-}
-
-.pages__count {
-    top: 35px;
-    right: 485px;
-    position: fixed;
+    transform: translate(-50%, -50%);
     z-index: 1;
-    color: #777;
-    font-family: 'Open Sans', sans-serif;
+    overflow-y: auto;
+}
+
+.bookmarks__title {
+    font-size: 24px;
+    text-align: center;
+}
+
+.bookmarks__list {
+    padding: 0;
+    list-style: none;
+}   
+
+.bookmarks__item {
+    margin: 10px 0;
+}
+
+.bookmarks__link {
+    line-height: 1.4;
+}
+
+.bookmarks__close {
+    z-index: 1;
+    position: absolute;
+    right: 16px;
+    top: 21px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    outline: none;
+}
+
+.bookmarks__close path {
+    fill: #d1d1d1;
+    transition: fill .2s;
+}
+
+.bookmarks__close:hover path {
+    fill: #ffffff;
+}
+
+.bookmarks__close:focus path {
+    fill: #ffffff;
+}
+
+
+.mask {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
 }
