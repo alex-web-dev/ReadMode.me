@@ -2,14 +2,9 @@
   "manifest_version": 2,
   "name": "Read",
   "description": "",
-  "version": "1.0.2",
+  "version": "1.0.4",
   "browser_action": {
     "default_title": "Read"
-  },
-  "icons": {
-    "16": "images/icon.png",
-    "48": "images/icon.png",
-    "128": "images/icon.png"
   },
   "content_scripts": [
     {
@@ -18,7 +13,7 @@
     }
   ],
   "permissions": [
-    "tabs", "<all_urls>"
+    "tabs", "<all_urls>", "storage"
   ],
   "background": {
     "scripts": ["js/background.js"]
