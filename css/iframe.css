@@ -3,6 +3,10 @@ body {
     font-size: 16px;
 }
 
+ul[class*="inline"] {
+    padding-left: 0;
+}
+
 [class*="inline"] {
     display: inline-block;
     min-width: 2rem;
@@ -25,6 +29,7 @@ body {
 .simple-read__content {
     position: relative;
     z-index: 1;
+    line-height: 1.6;
 }
 
 p {
@@ -47,6 +52,35 @@ img {
 
 h1 {
     font-size: 1.8em;
+}
+
+pre {
+    border: 1px solid #cacdd1;
+    background: #eceef0;
+    padding: 15px;
+    overflow: auto;
+}
+
+table {
+    margin: 1.5em 0;
+    width: 100%;
+    border: 1px solid #d5d5d5;
+    border-collapse: collapse;
+}
+
+table td, table th {
+    padding: 6px 12px 9px;
+    border: 1px solid #d5d5d5;
+    vertical-align: top;
+    line-height: 1.5;
+}
+
+blockquote {
+    padding: 15px;
+    background: #f3f3f3;
+    margin-left: 0;
+    margin-right: 0;
+    border-left: 4px solid #737373;
 }
 
 .interface {
@@ -81,6 +115,14 @@ h1 {
     margin-left: 15px;
 }
 
+.interface__btn_bookmarks {
+    transition: border .3s, outline .3s;
+}
+
+.interface__btn_bookmarks path {
+    transition: fill .3s;
+}
+
 .interface__btn_bookmarks_active {
     border-color: #c74325;
     outline-color: #c74325;
@@ -100,6 +142,23 @@ h1 {
     border: none;
     width: auto;
     outline: none;
+}
+
+.interface__btn_voice {
+    transition: border .3s, outline .3s;
+}
+
+.interface__btn_voice path {
+    transition: fill .3s;
+}
+
+.interface__btn_voice[data-voice="active"] {
+    border-color: #e2be39;
+    outline-color: #e2be39;
+}
+
+.interface__btn_voice[data-voice="active"] path {
+    fill: #e2be39;
 }
 
 .bookmarks {
