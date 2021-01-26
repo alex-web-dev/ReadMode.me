@@ -83,6 +83,15 @@ blockquote {
     border-left: 4px solid #737373;
 }
 
+figure {
+    margin: 0;
+}
+
+iframe {
+    border: none;
+    width: 100%;
+}
+
 .interface {
     position: fixed;
     right: 0;
@@ -182,7 +191,7 @@ blockquote {
     padding: 15px;
     border: 1px solid #ddd;
     width: 610px;
-    height: 350px;
+    height: 100%;
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
@@ -201,11 +210,17 @@ blockquote {
 }   
 
 .bookmarks__item {
-    margin: 10px 0;
+    margin: 20px 0;
 }
 
 .bookmarks__link {
     line-height: 1.4;
+    color: #000000;
+    text-decoration: none;
+}
+
+.bookmarks__link:hover {
+    color: #000;
 }
 
 .bookmarks__close {
