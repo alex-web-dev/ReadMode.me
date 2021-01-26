@@ -183,6 +183,11 @@
     $bookmarksPopupBtn.innerHTML = 'Закладки';
     
     $bookmarksPopupBtn.addEventListener('click', () => {
+      const $bookmarksPopup = doc.querySelector('.bookmarks');
+      if ($bookmarksPopup) {
+        return;
+      }
+      
       chrome.storage.local.get(['bookmarks'], function(result) {
         const bookmarks = result.bookmarks;
         addBookmarksPopup(doc, bookmarks);
@@ -482,9 +487,7 @@ function getPageContent() {
         $content != cloneBody && 
         $content.parentElement.innerText) {
     $content = $content.parentElement;
-    console.log(wordCountSelected / wordsCount);
     wordCountSelected = $content.innerText.match(/\S+/g).length;
-    console.log(wordCountSelected / wordsCount);
   }
 
   
@@ -504,8 +507,7 @@ function removeBlackListElems($parent) {
 }
 
 function removeAdvBanners($parent) {
-  $parent.querySelectorAll('[class*="banner"], [id*="yandex_rtb"').forEach($banner => {
-    console.log($banner);
+  $parent.querySelectorAll('[class*="banner"], [id*="yandex_rtb"], [class*="adsbygoogle"]').forEach($banner => {
     $banner.remove()
   })
 }
