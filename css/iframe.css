@@ -217,10 +217,18 @@ iframe {
     line-height: 1.4;
     color: #000000;
     text-decoration: none;
+    display: inline-flex;
+    align-items: center;
 }
 
 .bookmarks__link:hover {
     color: #000;
+}
+
+.bookmarks__icon {
+    margin-right: 10px;
+    width: 16px;
+    height: 16px;
 }
 
 .bookmarks__close {
