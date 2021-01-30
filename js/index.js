@@ -221,8 +221,8 @@
           removeBookmark(newBookmark.url);
           return;
         }
-  
-        bookmarks.push(newBookmark);
+        
+        bookmarks.unshift(newBookmark);
         chrome.storage.local.set({'bookmarks': bookmarks});
       } else {
         chrome.storage.local.set({'bookmarks': [newBookmark]});
@@ -285,7 +285,7 @@
     doc.body.appendChild($bookmarksPopup);
     setTimeout(() => {
       $bookmarksPopup.classList.remove('bookmarks_hide');
-    }, 50);
+    }, 200);
   
     const $closePopupBtn = document.createElement('button');
     $closePopupBtn.className = 'bookmarks__close';
@@ -316,7 +316,10 @@
       bookmarks.forEach((bookmark, i) => {
         $bookmarksList.innerHTML += `
           <li class="bookmarks__item">
-            <a href="${bookmark.url}" class="bookmarks__link">${i + 1}. ${bookmark.name}</a>
+            <a href="${bookmark.url}" class="bookmarks__link">
+              <img src="http://www.google.com/s2/favicons?domain=${bookmark.url}" class="bookmarks__icon">
+              ${i + 1}. ${bookmark.name}
+            </a>
           </li>
         `;
       });
@@ -376,7 +379,7 @@
   
   let voiceTextsArray = [];
   function voiceStart(text, doc) {    
-    let optimalTextLength = 1700; //SpeechSynthesis limit
+    let optimalTextLength = 1000; //SpeechSynthesis limit
     let i = 0;
     
     while ((text.length > optimalTextLength) && i < optimalTextLength * 2) {
@@ -421,12 +424,15 @@
 
     const voiceBtn = doc.querySelector('.interface__btn_voice');
     const speakingUpdate = setInterval(() => {
-      synth.resume();
-  
+      
+      voiceTextsArray.splice(0, 1);
+
+      window.speechSynthesis.pause();
+      window.speechSynthesis.resume();
       if (voiceBtn.dataset.voice !== 'active') {
         clearInterval(speakingUpdate);
       }
-    }, 14000);
+    }, 10000);
 
     speakText();
 
@@ -490,7 +496,6 @@ function getPageContent() {
     wordCountSelected = $content.innerText.match(/\S+/g).length;
   }
 
-  
   if ($content.tagName === "P") {
       $content = $content.parentElement;
   }
@@ -508,6 +513,6 @@ function removeBlackListElems($parent) {
 
 function removeAdvBanners($parent) {
   $parent.querySelectorAll('[class*="banner"], [id*="yandex_rtb"], [class*="adsbygoogle"]').forEach($banner => {
-    $banner.remove()
-  })
+    $banner.remove();
+  });
 }
