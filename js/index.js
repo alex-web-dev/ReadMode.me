@@ -1,7 +1,20 @@
 (() => {
-
   if(!document.querySelector('.simple-read')) {
+    addTrackingScript();
     createFrame();
+  }
+
+  function addTrackingScript() {
+    const $oldTracking = document.querySelector('script[src*="js/tracking.js"]');
+    if ($oldTracking) {
+      $oldTracking.remove();
+    }
+
+    const $tracking = document.createElement('script');
+    $tracking.type = 'text/javascript';
+    $tracking.src = getPath('js/tracking.js');
+    const $s = document.getElementsByTagName('script')[0];
+    $s.parentNode.insertBefore($tracking, $s);
   }
   
   function createFrame() {
@@ -56,8 +69,13 @@
   
     const $blockContent = document.createElement('div');
     $blockContent.className = 'simple-read__content';
-    $blockContent.appendChild(getPageContent());
-
+    Mercury.parse().then(result => {
+      if (document.body.querySelector('h1')) {
+        $blockContent.appendChild(document.body.querySelector('h1').cloneNode(true));
+      }
+      $blockContent.innerHTML += result.content;
+    });
+    
     $wrapper.appendChild($blockContent);
     $blockBody.appendChild($wrapper);
   
@@ -158,21 +176,21 @@
       }
     });
   
-      $bookmarksBtn.addEventListener('click', () => {
-        chrome.storage.local.get(['bookmarks'], function(result) {
-          const bookmarks = result.bookmarks;
-        
-          if(hasBookmark(thisURL, bookmarks)) {
-              removeBookmark(thisURL);
-              $bookmarksBtn.classList.remove('interface__btn_bookmarks_active');
-              return;
-          };
-  
-          const thisArticleName = document.title;
-          addToBookmarks(thisURL, thisArticleName);
-          $bookmarksBtn.classList.add('interface__btn_bookmarks_active');
-        });
+    $bookmarksBtn.addEventListener('click', () => {
+      chrome.storage.local.get(['bookmarks'], function(result) {
+        const bookmarks = result.bookmarks;
+      
+        if(hasBookmark(thisURL, bookmarks)) {
+            removeBookmark(thisURL);
+            $bookmarksBtn.classList.remove('interface__btn_bookmarks_active');
+            return;
+        };
+
+        const thisArticleName = document.title;
+        addToBookmarks(thisURL, thisArticleName);
+        $bookmarksBtn.classList.add('interface__btn_bookmarks_active');
       });
+    });
   
     return $bookmarksBtn;
   }
@@ -353,17 +371,18 @@
     $voiceBtn.addEventListener('click', () => {
       if($voiceBtn.dataset.voice === 'active') {
         voiceCancel();
-        
         $voiceBtn.removeAttribute('data-voice', 'active');
       } else {
         const $articleClone = doc.querySelector('.simple-read__content').cloneNode(true);
         const $itemCodeTags = $articleClone.querySelectorAll('code');
         $itemCodeTags.forEach($codeTag => $codeTag.remove());
         
-  
-        let text = $articleClone.innerText;
+        $articleCloneTitle = $articleClone.querySelector('h1');
+        if ($articleCloneTitle) {
+          $articleCloneTitle.remove();
+        }
 
-        
+        let text = $articleClone.innerText;
         voiceStart(text, doc);
         $voiceBtn.setAttribute('data-voice', 'active');
       }
@@ -372,15 +391,10 @@
     return $voiceBtn;
   }
   
-  function voiceResume() {
-    const synth = window.speechSynthesis;
-    synth.resume();
-  }
-  
   let voiceTextsArray = [];
   function voiceStart(text, doc) {    
-    let optimalTextLength = 1000; //SpeechSynthesis limit
-    let i = 0;
+    let optimalTextLength = 1500; //SpeechSynthesis limit
+    let i = 0;    
     
     while ((text.length > optimalTextLength) && i < optimalTextLength * 2) {
       if ( i >= optimalTextLength && /[!?\.,]/.test(text[i]) ) {
@@ -436,7 +450,6 @@
 
     speakText();
 
-
     function speakText() {
       synth.speak(voicePlayer);
     }
@@ -451,68 +464,3 @@
   speechSynthesis.addEventListener('voiceschanged', e => {});
 
 })();
-
-
-function getPageContent() {
-  let cloneBody = document.body.cloneNode(true);
-  removeBlackListElems(cloneBody);
-  removeAdvBanners(cloneBody);
-
-  cloneBody.querySelectorAll('a:not([href]):not([id]):not([name])').forEach($link => $link.remove());
-
-  cloneBody.querySelectorAll('h1, h2, h3, h4, h5, h6').forEach($title => {
-    let titleText = $title.innerText.trim();
-    if (!/[,.!?;:]/.test(titleText[titleText.length - 1])) {
-      titleText += '.';
-    }
-    $title.innerHTML = titleText;    
-  });
-
-  let $content;
-  let $textElems = cloneBody.querySelectorAll('p');
-  let $mostWordsElem = cloneBody;
-  let mostWordsCount = 0;
-  const wordsCount = cloneBody.innerText.match(/\S+/g).length;
-
-  if ($textElems.length === 0) {
-    $textElems = cloneBody.querySelectorAll("div");
-  }
-
-  $textElems.forEach(elem => {
-      const innerText = elem.innerText.match(/\S+/g);
-      if (innerText && innerText.length > mostWordsCount) {
-        $mostWordsElem = elem;
-        mostWordsCount = innerText.length;
-      }
-  });
-
-  $content = $mostWordsElem;
-  let wordCountSelected = mostWordsCount;
-
-  while (wordCountSelected / wordsCount < 0.7 &&
-        $content != cloneBody && 
-        $content.parentElement.innerText) {
-    $content = $content.parentElement;
-    wordCountSelected = $content.innerText.match(/\S+/g).length;
-  }
-
-  if ($content.tagName === "P") {
-      $content = $content.parentElement;
-  }
-
-  if (!$content.querySelector('h1')) {
-   $content.prepend(cloneBody.querySelector('h1'));
-  }
-
-  return $content.cloneNode(true);
-}
-
-function removeBlackListElems($parent) {
-  $parent.querySelectorAll('#comments, .comments, style, script, #___gcse_0').forEach(($item) => $item.remove());
-}
-
-function removeAdvBanners($parent) {
-  $parent.querySelectorAll('[class*="banner"], [id*="yandex_rtb"], [class*="adsbygoogle"]').forEach($banner => {
-    $banner.remove();
-  });
-}
