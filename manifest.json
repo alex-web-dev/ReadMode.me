@@ -2,14 +2,17 @@
   "manifest_version": 2,
   "name": "Read",
   "description": "",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "browser_action": {
     "default_title": "Read"
   },
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "css": ["css/styles.css"]
+      "css": ["css/styles.css"],
+      "js": [
+        "js/mercury.web.js"
+      ]
     }
   ],
   "permissions": [
@@ -20,6 +23,9 @@
   },
   "web_accessible_resources": [
     "images/*.svg",
-    "css/iframe.css"
-  ]
+    "css/iframe.css",
+    "js/mercury.web.js",
+    "js/tracking.js"
+  ],
+  "content_security_policy": "script-src 'self' https://ssl.google-analytics.com; object-src 'self'"
 }
