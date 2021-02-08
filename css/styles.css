@@ -16,7 +16,7 @@
     transform: translateY(30px);
 }
 
-.disable {
+.simple-read__disable {
     height: 100vh;
     overflow: hidden;
 }
