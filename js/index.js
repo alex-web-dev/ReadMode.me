@@ -1,6 +1,6 @@
 (() => {
   if(!document.querySelector('.simple-read')) {
-    addTrackingScript();
+    // addTrackingScript();
     createFrame();
   }
 
@@ -19,7 +19,6 @@
   
   function createFrame() {
     appendFrameTemplate();
-  
     disableHTML(document);  
   }
   
@@ -40,14 +39,12 @@
   
   function disableHTML(doc) {
     const $html = doc.querySelector('html');
-    
-    $html.classList.add('disable');
+    $html.classList.add('simple-read__disable');
   }
   
   function enableHTML(doc){
-    
     const $html = doc.querySelector('html');
-    $html.classList.remove('disable');
+    $html.classList.remove('simple-read__disable');
   }
   
   function addStylesheet(doc, url) {
@@ -60,7 +57,48 @@
     doc.head.appendChild(style);
   }
 
-  function appendFrameTemplate() {
+  async function getArticle() {
+    const url = location.href;
+
+    let article = {
+      title: '',
+      content: ''
+    };
+
+    if (document.body.querySelector('h1')) {
+      article.title = document.body.querySelector('h1').cloneNode(true);
+    }
+
+    if (url.includes('fontanka.ru') && document.querySelector('section[itemprop="articleBody"]')) {
+      const $articleClone = document.querySelector('section[itemprop="articleBody"]').cloneNode(true);
+      $articleClone.querySelectorAll('.plyr, .flickity-button').forEach(item => item.remove());
+      article.content = $articleClone.innerHTML;
+    } else if (url.includes('echo.msk.ru') && document.querySelector('div[itemprop="articleBody"]')) {
+      const $articleClone = document.querySelector('[itemprop="articleBody"]').cloneNode(true);
+      $articleClone.querySelectorAll('figcaption').forEach(item => item.remove());
+      article.content = $articleClone.innerHTML;
+    } else if (url.includes('e1.ru') && document.querySelector('[itemprop="articleBody"]')) {      
+      if (document.body.querySelector('h2[itemprop="headline"]')) {
+        article.title = document.body.querySelector('h2[itemprop="headline"]').cloneNode(true);
+      }
+
+      const $articleClone = document.querySelector('[itemprop="articleBody"]').cloneNode(true);
+      $articleClone.querySelectorAll('figcaption, .M1am9, .M1b3, .JDan3').forEach(item => item.remove());
+      article.content = $articleClone.innerHTML;
+    }
+
+    if (article.content) {
+      return article;
+    }       
+
+    Mercury.parse().then(result => {
+      article.content = result.content;
+    });
+
+    return await article;
+  }
+
+  async function appendFrameTemplate() {
     const $blockBody = document.createElement('div');
     $blockBody.className = 'simple-read__body';
     
@@ -69,13 +107,13 @@
   
     const $blockContent = document.createElement('div');
     $blockContent.className = 'simple-read__content';
-    Mercury.parse().then(result => {
-      if (document.body.querySelector('h1')) {
-        $blockContent.appendChild(document.body.querySelector('h1').cloneNode(true));
-      }
-      $blockContent.innerHTML += result.content;
-    });
+
+    const article = await getArticle();
+    console.log(article);
     
+    $blockContent.appendChild(article.title);
+    $blockContent.innerHTML += article.content;
+
     $wrapper.appendChild($blockContent);
     $blockBody.appendChild($wrapper);
   
@@ -91,7 +129,9 @@
       voiceCancel();
     });
   
-    const iframeDocument = $iframe.contentWindow.document;
+    const iframeWindow = $iframe.contentWindow;
+    const iframeDocument = iframeWindow.document;
+
     iframeDocument.head.innerHTML += getFrameFonts();
     addStylesheet(iframeDocument, 'css/iframe.css');
     
@@ -99,26 +139,59 @@
     iframeDocument.body.appendChild($interface);
     iframeDocument.body.appendChild($blockBody);
   
-    const iframeWindow = $iframe.contentWindow;
-    iframeDocument.querySelectorAll('a[href*="#"]:not([target="_blank"])').forEach(($anchor) => {
-      
-      $anchor.addEventListener('click', (e) => {
-        e.preventDefault();
-  
-        const blockID = $anchor.getAttribute('href');
-        const blockName = $anchor.getAttribute('href').substr(1);
-        const $block = iframeDocument.querySelector(`[name="${blockName}"]`) || iframeDocument.querySelector(blockID);
-        const blockOffsetTop = $block.getBoundingClientRect().top;
-  
-        iframeWindow.scrollBy({ top: (blockOffsetTop), left: 0, behavior: 'smooth' });
+    scrollAnchorLinks(iframeWindow);
+
+    fixNotAnchorLinks(iframeDocument);
+
+    addAnchorToTitles(iframeDocument);
+  }
+
+  function addAnchorToTitles(iframeDoc) {
+    let titlesAnchorsArray = [];
+    [...document.querySelectorAll('h2, h3, h4, h5, h6')].forEach($title => {
+        const $titlePrev = $title.previousElementSibling;
+        if ($titlePrev && $titlePrev.getAttribute('name') && !$title.getAttribute('name')) {
+          titlesAnchorsArray.push({
+            text: $title.innerText ?? '',
+            anchor: $titlePrev.getAttribute('name') ?? ''
+          });
+        }
+    });
+
+    iframeDoc.querySelectorAll('h2, h3, h4, h5, h6').forEach(($title, i) => {
+      titlesAnchorsArray.forEach(item => {
+        if(item.text === $title.innerText) {
+            $title.setAttribute('name', item.anchor)
+        }
       });
     });
-    const $iframeLinks = iframeDocument.querySelectorAll('a:not([href*="#"]):not([target="_blank"])');
-    fixNotAnchorLinks($iframeLinks);
+  }
+
+  function scrollAnchorLinks(win) {
+    const doc = win.document;
+    const $links = doc.querySelectorAll('a[href*="#"]:not([target="_blank"])')
+    
+
+    $links.forEach(($link) => {
+      $link.addEventListener('click', (e) => {
+        e.preventDefault();
+  
+        const blockID = $link.getAttribute('href');
+        const blockName = $link.getAttribute('href').substr(1);
+        const $block = doc.querySelector(`[name="${blockName}"]`) || doc.querySelector(blockID);
+        
+        if ($block) {
+          const blockOffsetTop = $block.getBoundingClientRect().top;
+          win.scrollBy({ top: (blockOffsetTop), left: 0, behavior: 'smooth' });
+        }
+      });
+    });
   }
   
-  function fixNotAnchorLinks($linksNotAnchors) {
-    $linksNotAnchors.forEach(($link) => {
+  function fixNotAnchorLinks(doc) {
+    const $links = doc.querySelectorAll('a:not([href*="#"]):not([target="_blank"])');
+
+    $links.forEach(($link) => {
       $link.addEventListener('click', (e) => {
         e.preventDefault();
         removeFrame();
