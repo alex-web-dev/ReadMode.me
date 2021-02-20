@@ -269,7 +269,6 @@ video {
     fill: #ffffff;
 }
 
-
 .mask {
     position: absolute;
     left: 0;
@@ -282,4 +281,23 @@ video {
 section[style*="background-image"] {
     background-size: 100%;
     height: 340px;
+}
+
+.context-menu {
+    position: absolute;
+    background: rgba(0, 0, 0, 0.85);
+    padding: 5px;
+    border-radius: 4px;
+    z-index: 1;
+}
+
+.context-menu__btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    outline: none;
+}
+
+.context-menu__icon {
+    width: 20px;
 }

@@ -1,6 +1,7 @@
 (() => {
+
   if(!document.querySelector('.simple-read')) {
-    // addTrackingScript();
+    addTrackingScript();
     createFrame();
   }
 
@@ -92,7 +93,16 @@
     }       
 
     Mercury.parse().then(result => {
-      article.content = result.content;
+      const minLength = 30;
+      if (result.content.length >= minLength) {
+        article.content = result.content;
+      } else if (document.querySelector('article')) {
+        const $defaultArticle = document.querySelector('article').cloneNode(true);
+        $defaultArticle.querySelectorAll('header, h1').forEach(($elem) => $elem.remove());
+        article.content = $defaultArticle.innerHTML;
+      } else {
+        article.content = 'Содержимое страницы не найдено';
+      }
     });
 
     return await article;
@@ -109,9 +119,9 @@
     $blockContent.className = 'simple-read__content';
 
     const article = await getArticle();
-    console.log(article);
-    
-    $blockContent.appendChild(article.title);
+    if (article.title) {
+      $blockContent.appendChild(article.title);
+    }
     $blockContent.innerHTML += article.content;
 
     $wrapper.appendChild($blockContent);
@@ -138,12 +148,36 @@
     const $interface = getUI(iframeDocument);
     iframeDocument.body.appendChild($interface);
     iframeDocument.body.appendChild($blockBody);
+
+
   
     scrollAnchorLinks(iframeWindow);
-
     fixNotAnchorLinks(iframeDocument);
-
     addAnchorToTitles(iframeDocument);
+
+    iframeWindow.addEventListener('click', (e) => {
+      setTimeout(() => {
+        const selectionText = iframeWindow.getSelection().toString().trim();
+        if (!selectionText) {
+          return;
+        }
+  
+        const coords = {
+          x: e.clientX,
+          y: e.layerY
+        }
+        
+        const $contextMenu = getContextMenu(iframeWindow, coords);
+        iframeDocument.body.appendChild($contextMenu);
+      }, 10);
+    });
+
+    iframeWindow.addEventListener('mouseup', (e) => {
+      if (iframeDocument.querySelector('.context-menu')) {
+        iframeDocument.querySelector('.context-menu').remove();
+      }
+    });
+
   }
 
   function addAnchorToTitles(iframeDoc) {
@@ -161,7 +195,7 @@
     iframeDoc.querySelectorAll('h2, h3, h4, h5, h6').forEach(($title, i) => {
       titlesAnchorsArray.forEach(item => {
         if(item.text === $title.innerText) {
-            $title.setAttribute('name', item.anchor)
+          $title.setAttribute('name', item.anchor)
         }
       });
     });
@@ -171,7 +205,6 @@
     const doc = win.document;
     const $links = doc.querySelectorAll('a[href*="#"]:not([target="_blank"])')
     
-
     $links.forEach(($link) => {
       $link.addEventListener('click', (e) => {
         e.preventDefault();
@@ -464,6 +497,8 @@
     return $voiceBtn;
   }
   
+  speechSynthesis.addEventListener('voiceschanged', e => {});
+
   let voiceTextsArray = [];
   function voiceStart(text, doc) {    
     let optimalTextLength = 1500; //SpeechSynthesis limit
@@ -486,7 +521,7 @@
     const synth = window.speechSynthesis;
     const voices = synth.getVoices();
     const voicePlayer = new SpeechSynthesisUtterance(voiceTextsArray[0]);
-    const voiceName = 'Google русский';
+    const voiceName = isRusText(voiceTextsArray[0]) ? 'Google русский' : 'Google US English';
   
     voicePlayer.onend = function() {
       voiceTextsArray.splice(0, 1);
@@ -504,14 +539,13 @@
     }
   
     for (let voice of voices) {
-        if (voice.name === voiceName) {
-          voicePlayer.voice = voice;
-        }
+      if (voice.name === voiceName) {
+        voicePlayer.voice = voice;
+      }
     }
 
     const voiceBtn = doc.querySelector('.interface__btn_voice');
     const speakingUpdate = setInterval(() => {
-      
       voiceTextsArray.splice(0, 1);
 
       window.speechSynthesis.pause();
@@ -533,7 +567,38 @@
     synth.cancel();
     voiceTextsArray = [];
   }
-  
-  speechSynthesis.addEventListener('voiceschanged', e => {});
 
+  function getContextMenu(win, coords) {
+    const $template = document.createElement('div');
+    $template.className = 'context-menu';
+    $template.style.left = `${coords.x}px`;
+    $template.style.top = `${coords.y + 10}px`;
+
+    const $translateBtn = document.createElement('button');
+    $translateBtn.className = 'context-menu__btn context-menu__btn_translate';
+    $translateBtn.innerHTML = `
+      <img src="${getPath('images/translate.svg')}" class="context-menu__icon" alt="Google Translate">
+    `;
+
+    $translateBtn.addEventListener('mouseup', () => {
+      const selectionText = win.getSelection().toString().trim();
+      if (!selectionText) {
+        return;
+      }
+
+      const textURL = encodeURI(selectionText);
+      const translateLang = isRusText(selectionText) ? 'en' : 'ru';
+      const url = `https://translate.google.ru/?sl=auto&tl=${translateLang}&text=${textURL}&op=translate`;
+      window.open(url, 'translate', 'target="_blank"')
+    });
+
+    $template.appendChild($translateBtn);
+
+    return $template;
+  }  
+
+  function isRusText(text) {
+    return /[а-я]/i.test(text);
+  }
+  
 })();
