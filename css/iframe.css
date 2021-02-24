@@ -113,6 +113,7 @@ video {
     width: 100%;
     padding: 0 15px;
     display: flex;
+    align-items: center;
 }
 
 .interface__btn {
@@ -159,12 +160,24 @@ video {
     border-color: #c74325;
 }
 
-.interface__btn_bookmarks-popup {
+.interface__left {
     margin-right: auto;
-    font-size: 16px;
+}
+
+.interface__left-btn {
+    transition: color .2s;
+    cursor: pointer;
+    background: none;
+    color: #aaa;
     border: none;
-    width: auto;
+    font-size: 16px;
+    display: block;
+    margin: 5px 0;
     outline: none;
+}
+
+.interface__left-btn:hover {
+    color: #333;
 }
 
 .interface__btn_voice {
@@ -184,7 +197,7 @@ video {
     fill: #e2be39;
 }
 
-.bookmarks {
+.bookmarks, .simular {
     position: fixed;
     width: 100%;
     height: 100%;
@@ -194,12 +207,12 @@ video {
     z-index: 2;
 }
 
-.bookmarks_hide {
+.bookmarks_hide, .simular_hide {
     opacity: 0;
     visibility: hidden;
 }
 
-.bookmarks__content {
+.bookmarks__content, .simular__content {
     position: absolute;
     background: #ffffff;
     padding: 15px;
@@ -213,21 +226,40 @@ video {
     overflow-y: auto;
 }
 
-.bookmarks__title {
+.bookmarks__title, .simular__title {
     font-size: 24px;
     text-align: center;
 }
 
-.bookmarks__list {
+.bookmarks__list, .simular__list {
     padding: 0;
     list-style: none;
 }   
 
-.bookmarks__item {
+.bookmarks__item, .simular__item {
     margin: 20px 0;
 }
 
-.bookmarks__link {
+.simular__item {
+    padding-bottom: 15px;
+}
+
+.simular__item:not(:last-child) {
+    border-bottom: 1px solid #d9d9d9;
+}
+
+.simular__item-title {
+    font-size: 20px;
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+.simular__item-desc {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+.bookmarks__link, .simular__link {
     line-height: 1.4;
     color: #000000;
     text-decoration: none;
@@ -235,8 +267,12 @@ video {
     align-items: center;
 }
 
-.bookmarks__link:hover {
+.bookmarks__link:hover, .simular__link:hover {
     color: #000;
+}
+
+.simular__link {
+    margin-bottom: 15px;
 }
 
 .bookmarks__icon {
@@ -245,27 +281,33 @@ video {
     height: 16px;
 }
 
-.bookmarks__close {
+.simular__img {
+    width: 100%;
+    max-height: 300px;
+    object-fit: cover;
+}
+
+.close-btn {
     z-index: 1;
     position: absolute;
     right: 16px;
-    top: 21px;
+    top: 31px;
     background: none;
     border: none;
     cursor: pointer;
     outline: none;
 }
 
-.bookmarks__close path {
+.close-btn path {
     fill: #d1d1d1;
     transition: fill .2s;
 }
 
-.bookmarks__close:hover path {
+.close-btn:hover path {
     fill: #ffffff;
 }
 
-.bookmarks__close:focus path {
+.close-btn:focus path {
     fill: #ffffff;
 }
 
