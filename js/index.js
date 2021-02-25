@@ -185,9 +185,22 @@
           return;
         }
   
-        const coords = {
-          x: e.clientX,
-          y: e.layerY
+        const contextMenuOffsetX = 150;
+        const contextMenuOffsetY = 60;
+        const coords = {};
+
+        if (e.clientX > (window.innerWidth - contextMenuOffsetX)) {
+          coords.x = e.clientX - contextMenuOffsetX;
+        } else {
+          coords.x = e.clientX;
+        }
+
+        if (e.layerY > (window.innerHeight - contextMenuOffsetY)) {
+          coords.y = e.layerY - contextMenuOffsetY;
+        } else if (e.layerY < contextMenuOffsetY) {
+          coords.y = contextMenuOffsetY;
+        } else {
+          coords.y = e.layerY;
         }
         
         const $contextMenu = getContextMenu(iframeWindow, coords);
@@ -604,13 +617,25 @@
     $template.style.left = `${coords.x}px`;
     $template.style.top = `${coords.y + 10}px`;
 
-    const $translateBtn = document.createElement('button');
-    $translateBtn.className = 'context-menu__btn context-menu__btn_translate';
-    $translateBtn.innerHTML = `
+    const $copyBtn = getCopyBtn(win);
+    const $searchBtn = getSearchBtn(win);
+    const $translateBtn = getTranslateBtn(win);
+
+    $template.appendChild($copyBtn);
+    $template.appendChild($searchBtn);
+    $template.appendChild($translateBtn);
+
+    return $template;
+  }  
+
+  function getTranslateBtn(win) {
+    const $btn = document.createElement('button');
+    $btn.className = 'context-menu__btn context-menu__btn_translate';
+    $btn.innerHTML = `
       <img src="${getPath('images/translate.svg')}" class="context-menu__icon" alt="Google Translate">
     `;
 
-    $translateBtn.addEventListener('mouseup', () => {
+    $btn.addEventListener('mouseup', () => {
       const selectionText = win.getSelection().toString().trim();
       if (!selectionText) {
         return;
@@ -622,10 +647,66 @@
       window.open(url, 'translate', 'target="_blank"')
     });
 
-    $template.appendChild($translateBtn);
+    return $btn;
+  }
 
-    return $template;
-  }  
+  function getSearchBtn(win) {
+    const $btn = document.createElement('button');
+    $btn.className = 'context-menu__btn context-menu__btn_search';
+    $btn.innerHTML = `
+      <img src="${getPath('images/search.svg')}" class="context-menu__icon" alt="Google Search">
+    `;
+
+    $btn.addEventListener('mouseup', () => {
+      const selectionText = win.getSelection().toString().trim();
+      if (!selectionText) {
+        return;
+      }
+
+      const textURL = encodeURI(selectionText);
+      const url = `https://www.google.com/search?q=${textURL}`;
+      window.open(url, 'search', 'target="_blank"');
+    });
+
+    return $btn;
+  }
+
+  function getCopyBtn(win) {
+    const $btn = document.createElement('button');
+    $btn.className = 'context-menu__btn context-menu__btn_copy';
+    $btn.innerHTML = `
+      <img src="${getPath('images/files.svg')}" class="context-menu__icon" alt="Copy">
+    `;
+
+    $btn.addEventListener('mouseup', () => {
+      const selectionText = win.getSelection().toString().trim();
+      if (!selectionText) {
+        return;
+      }
+
+      navigator.clipboard.writeText(selectionText)
+      .then(() => {})
+      .catch(err => {
+        showMessage(win.document, 'Скопировать не удалось');
+      });
+    });
+
+    return $btn;
+  }
+
+  function showMessage(doc, text) {
+    const $template = document.createElement('div');
+    $template.className = 'message message_hide';
+    $template.innerHTML = text;
+    
+    doc.body.appendChild($template);
+    setTimeout(() => {
+      $template.classList.remove('message_hide');
+    });
+    setTimeout(() => {
+      $template.remove();
+    }, 3000);
+  }
 
   function isRusText(text) {
     return /[а-я]/i.test(text);
