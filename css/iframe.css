@@ -338,8 +338,40 @@ section[style*="background-image"] {
     border: none;
     cursor: pointer;
     outline: none;
+    margin: 0 3px;
 }
 
 .context-menu__icon {
     width: 20px;
+}
+
+.message {
+    position: fixed;
+    z-index: 2;
+    bottom: 50px;
+    left: 50%;
+    max-width: 600px;
+    padding: 10px;
+    background: #353535;
+    color: #f7f7f7;
+    opacity: 0;
+    animation: fadeInOut 3s forwards;
+}
+
+@keyframes fadeInOut {
+    0% {
+        opacity: 0;
+    }
+
+    20% {
+        opacity: 1;
+    }
+
+    80% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0;
+    }
 }
