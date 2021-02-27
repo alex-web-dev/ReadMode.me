@@ -207,7 +207,7 @@ video {
     z-index: 2;
 }
 
-.bookmarks_hide, .simular_hide {
+.hide {
     opacity: 0;
     visibility: hidden;
 }
