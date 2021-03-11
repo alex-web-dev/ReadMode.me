@@ -2,21 +2,18 @@
   "manifest_version": 2,
   "name": "ReadMode.me",
   "description": "",
-  "version": "1.1.2",
+  "version": "1.1.4",
   "browser_action": {
     "default_title": "ReadMode.me"
   },
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "css": ["css/styles.css"],
-      "js": [
-        "js/mercury.web.js"
-      ]
+      "css": ["css/styles.css"]
     }
   ],
   "permissions": [
-    "tabs", "<all_urls>", "storage"
+    "activeTab", "storage"
   ],
   "background": {
     "scripts": ["js/background.js"]
