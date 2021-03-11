@@ -65,49 +65,47 @@
       content: ''
     };
 
-    article.title = getTitle();
+    const readabilityArticle = new Readability(document.cloneNode(true)).parse();
+    article.title = document.createElement('h1');
+    article.title.innerHTML = await readabilityArticle.title
+    article.content = await readabilityArticle.content;
 
-    if (url.includes('fontanka.ru') && document.querySelector('section[itemprop="articleBody"]')) {
-      const $articleClone = document.querySelector('section[itemprop="articleBody"]').cloneNode(true);
-      $articleClone.querySelectorAll('.plyr, .flickity-button').forEach(item => item.remove());
-      article.content = $articleClone.innerHTML;
-    } else if (url.includes('echo.msk.ru') && document.querySelector('div[itemprop="articleBody"]')) {
-      const $articleClone = document.querySelector('[itemprop="articleBody"]').cloneNode(true);
-      $articleClone.querySelectorAll('figcaption').forEach(item => item.remove());
-      article.content = $articleClone.innerHTML;
-    } else if (url.includes('e1.ru') && document.querySelector('[itemprop="articleBody"]')) {      
-      if (document.body.querySelector('h2[itemprop="headline"]')) {
-        article.title = document.body.querySelector('h2[itemprop="headline"]').cloneNode(true);
-      }
-
-      const $articleClone = document.querySelector('[itemprop="articleBody"]').cloneNode(true);
-      $articleClone.querySelectorAll('figcaption, .M1am9, .M1b3, .JDan3').forEach(item => item.remove());
-      article.content = $articleClone.innerHTML;
-    }
-
-    if (article.content) {
-      return article;
-    }       
-
-    if (typeof Mercury == 'undefined') {
-      article.content = 'Содержимое страницы не найдено. Попробуйте обновить страницу.';
-      return article;
-    }
-
-    Mercury.parse().then(result => {
-      const minLength = 50;
-      if (result.content.length >= minLength) {
-        article.content = result.content;
-      } else if (document.querySelector('article')) {
-        const $defaultArticle = document.querySelector('article').cloneNode(true);
-        $defaultArticle.querySelectorAll('header, h1').forEach(($elem) => $elem.remove());
-        article.content = $defaultArticle.innerHTML;
-      } else {
-        article.content = 'Содержимое страницы не найдено';
-      }
-    });
+    console.log(readabilityArticle);
+    
 
     return await article;
+  }
+
+  function getYandexArticle() {
+      const $articleClone = document.querySelector('article').cloneNode(true);
+      const removeClasses = `
+        .news-story__head, .mg-carousel, h1, .news-story__socials, .mg-button, .mg-snippet__image,
+        .news-story__media-stack, .news-snippet-source-info__turbo-icon, .mg-story__doc-reference-img`;
+
+      $articleClone.querySelectorAll(removeClasses).forEach(item => item.remove());
+
+      return $articleClone.innerHTML;
+  }
+
+  function getE1Article() {
+    const $articleClone = document.querySelector('[itemprop="articleBody"]').cloneNode(true);
+    $articleClone.querySelectorAll('figcaption, .M1am9, .M1b3, .JDan3').forEach(item => item.remove());
+    
+    return $articleClone.innerHTML;
+  }
+
+  function getEchoMSKArticle() {
+    const $articleClone = document.querySelector('[itemprop="articleBody"]').cloneNode(true);
+    $articleClone.querySelectorAll('figcaption').forEach(item => item.remove());
+    
+    return $articleClone.innerHTML;
+  }
+
+  function getFontankaArticle() {
+    const $articleClone = document.querySelector('section[itemprop="articleBody"]').cloneNode(true);
+    $articleClone.querySelectorAll('.plyr, .flickity-button, button, .A1f7').forEach(item => item.remove());
+    
+    return $articleClone.innerHTML;
   }
 
   function getTitle() {
@@ -140,6 +138,7 @@
     $blockContent.className = 'simple-read__content';
 
     const article = await getArticle();
+    
     if (article.title) {
       $blockContent.appendChild(article.title);
     }
@@ -156,6 +155,7 @@
   
     document.body.appendChild($iframe);
     $iframe.contentWindow.focus();
+
     window.addEventListener('beforeunload', () => {
       voiceCancel();
     });
@@ -170,8 +170,6 @@
     iframeDocument.body.appendChild($interface);
     iframeDocument.body.appendChild($blockBody);
 
-
-  
     scrollAnchorLinks(iframeWindow);
     addAnchorToTitles(iframeDocument);
 
@@ -179,33 +177,7 @@
     fixNotAnchorLinks($links);
 
     iframeWindow.addEventListener('click', (e) => {
-      setTimeout(() => {
-        const selectionText = iframeWindow.getSelection().toString().trim();
-        if (!selectionText) {
-          return;
-        }
-  
-        const contextMenuOffsetX = 150;
-        const contextMenuOffsetY = 60;
-        const coords = {};
-
-        if (e.clientX > (window.innerWidth - contextMenuOffsetX)) {
-          coords.x = e.clientX - contextMenuOffsetX;
-        } else {
-          coords.x = e.clientX;
-        }
-
-        if (e.layerY > (window.innerHeight - contextMenuOffsetY)) {
-          coords.y = e.layerY - contextMenuOffsetY;
-        } else if (e.layerY < contextMenuOffsetY) {
-          coords.y = contextMenuOffsetY;
-        } else {
-          coords.y = e.layerY;
-        }
-        
-        const $contextMenu = getContextMenu(iframeWindow, coords);
-        iframeDocument.body.appendChild($contextMenu);
-      }, 10);
+      contextMenuEvent(e, iframeWindow);
     });
 
     iframeWindow.addEventListener('mouseup', (e) => {
@@ -214,6 +186,42 @@
         $contextMenu.remove();
       }
     });
+  }
+
+  function contextMenuEvent(e, win) {
+    const doc = win.document;
+
+    if (!doc || !e) {
+      return;
+    }
+
+    setTimeout(() => {
+      const selectionText = win.getSelection().toString().trim();
+      if (!selectionText) {
+        return;
+      }
+
+      const contextMenuOffsetX = 150;
+      const contextMenuOffsetY = 60;
+      const coords = {};
+
+      if (e.clientX > (window.innerWidth - contextMenuOffsetX)) {
+        coords.x = e.clientX - contextMenuOffsetX;
+      } else {
+        coords.x = e.clientX;
+      }
+
+      if (e.layerY > (window.innerHeight - contextMenuOffsetY)) {
+        coords.y = e.layerY - contextMenuOffsetY;
+      } else if (e.layerY < contextMenuOffsetY) {
+        coords.y = contextMenuOffsetY;
+      } else {
+        coords.y = e.layerY;
+      }
+      
+      const $contextMenu = getContextMenu(win, coords);
+      doc.body.appendChild($contextMenu);
+    }, 10);
   }
 
   function addAnchorToTitles(iframeDoc) {
@@ -274,10 +282,7 @@
     const $left = document.createElement('div');
     $left.className = 'interface__left';
 
-    // const $simularPopupBtn = getSimularPopupBtn(doc);
     const $bookmarksPopupBtn = getBookmarksPopupBtn(doc);
-    
-    // $left.appendChild($simularPopupBtn);
     $left.appendChild($bookmarksPopupBtn);
 
     const $bookmarksBtn = getBookmarksBtn();
@@ -346,7 +351,7 @@
   function getBookmarksPopupBtn(doc) {
     const $btn = document.createElement('button');
     $btn.className = 'interface__left-btn interface__btn_bookmarks-popup';
-    $btn.innerHTML = 'Закладки';
+    $btn.innerHTML = 'Bookmarks';
     
     $btn.addEventListener('click', () => {
       const $popup = doc.querySelector('.bookmarks');
@@ -472,10 +477,10 @@
   function getBookmarksPopupContent(bookmarks) {
     const $popupContent = document.createElement('div');
     $popupContent.className = 'bookmarks__content';
-    $popupContent.innerHTML = '<div class="bookmarks__title">Закладки</div>'
+    $popupContent.innerHTML = '<div class="bookmarks__title">Boomarks</div>'
   
     if (!bookmarks) {
-      $popupContent.innerHTML += '<p>Список закладок пуст</p>';
+      $popupContent.innerHTML += '<p>Bookmarks toolbar is empty</p>';
     } else {
       const $bookmarksList = document.createElement('ul');
       $bookmarksList.className = 'bookmarks__list';
@@ -710,117 +715,5 @@
   function isRusText(text) {
     return /[а-я]/i.test(text);
   }
-
-  // function makeRequest(url, options = {}) {
-  //   return fetch(url, options).then(response => {
-  //     if (response.status = 200) {
-  //       return response.json();
-  //     }
-
-  //     return response.text().then(text => {
-  //       throw new Error(text);
-  //     });
-  //   }).catch(err => console.log(err));
-  // }
-
-  // function getSimularPopupBtn(doc) {
-  //   const $btn = document.createElement('button');
-  //   $btn.className = 'interface__left-btn interface__btn_simular-popup';
-  //   $btn.innerHTML = 'Похожие';
-    
-  //   $btn.addEventListener('click', () => {
-  //     const $simularPopup = doc.querySelector('.simular');
-  //     if ($simularPopup) {
-  //       return;
-  //     }
-
-  //     addSimularPopup(doc);
-  //   });
   
-  //   return $btn;
-  // }
-
-  // async function addSimularPopup(doc) {
-  //   if (!doc) {
-  //     return;
-  //   }
-    
-  //   const $popup = document.createElement('div');
-  //   const $popupContent = await getSimularPopupContent();
-  //   $popup.className = 'simular hide';
-  //   $popup.appendChild($popupContent);
-  //   $popup.innerHTML += '<div class="mask"></div>';
-
-  //   $popup.addEventListener('click', (e) => {
-  //     if (e.target.classList.contains('mask')) {
-  //       removePopup(doc, '.simular');
-  //     }
-  //   });
-  
-  //   doc.body.appendChild($popup);
-  //   setTimeout(() => {
-  //     $popup.classList.remove('hide');
-  //   }, 200);
-  
-  //   const $closePopupBtn = document.createElement('button');
-  //   $closePopupBtn.className = 'close-btn simular__close';
-  //   $closePopupBtn.innerHTML = `
-  //   <svg xmlns="http://www.w3.org/2000/svg"  width="20" viewBox="0 0 329 329">
-  //     <path d="m194.800781 164.769531 128.210938-128.214843c8.34375-8.339844 8.34375-21.824219 0-30.164063-8.339844-8.339844-21.824219-8.339844-30.164063 0l-128.214844 128.214844-128.210937-128.214844c-8.34375-8.339844-21.824219-8.339844-30.164063 0-8.34375 8.339844-8.34375 21.824219 0 30.164063l128.210938 128.214843-128.210938 128.214844c-8.34375 8.339844-8.34375 21.824219 0 30.164063 4.15625 4.160156 9.621094 6.25 15.082032 6.25 5.460937 0 10.921875-2.089844 15.082031-6.25l128.210937-128.214844 128.214844 128.214844c4.160156 4.160156 9.621094 6.25 15.082032 6.25 5.460937 0 10.921874-2.089844 15.082031-6.25 8.34375-8.339844 8.34375-21.824219 0-30.164063zm0 0"/>
-  //   </svg>
-  //   `;
-  //   $closePopupBtn.addEventListener('click', () => {
-  //     removePopup(doc, '.simular');
-  //   });
-  //   $popup.appendChild($closePopupBtn);
-  // }
-
-  // async function getSimularPopupContent() {
-  //   const $popupContent = document.createElement('div');
-
-  //   $popupContent.className = 'simular__content';
-  //   $popupContent.innerHTML = '<div class="simular__title">Похожие</div>';
-
-  //   const title = document.querySelector('h1') ? 
-  //     document.querySelector('h1').innerText : '';
-  //   const obj = {
-  //     title,
-  //     keywords: getKeywords()
-  //   }
-
-  //   await makeRequest('https://free.ru.net/_api/get_similar.php', {
-  //     method: 'POST',
-  //     body: JSON.stringify(obj)
-  //   }).then(result => {
-  //     const simularsArray = result;
-  //     if (!simularsArray) {
-  //       $popupContent.innerHTML += '<p>Похожих не найдено</p>';
-  //     } else {
-  //       const $simularList = document.createElement('ul');
-  //       $simularList.className = 'simular__list';
-  //       simularsArray.forEach((item, i) => {
-          
-  //         const $img = item.img ? `
-  //           <a href="${item.link}" class="simular__link" target="_blank">
-  //             <img src="${item.img}" class="simular__img">
-  //           </a>
-  //         ` : '';
-
-  //         $simularList.innerHTML += `
-  //           <li class="simular__item">
-  //             <a href="${item.link}" class="simular__link" target="_blank">
-  //               <p class="simular__item-title">${item.title}</p>
-  //             </a>
-  //             ${$img}
-  //             <p class="simular__item-desc">${item.description}</p>
-  //           </li>
-  //         `;
-  //       });
-    
-  //       $popupContent.appendChild($simularList);
-  //     }
-  //   });
-
-  //   return $popupContent;
-  // }
 })();
