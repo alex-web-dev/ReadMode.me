@@ -60,52 +60,75 @@
   async function getArticle() {
     const url = location.href;
 
-    let article = {
-      title: '',
-      content: ''
-    };
+    if (url.includes('fontanka.ru') && document.querySelector('section[itemprop="articleBody"]')) {
+      return getFontankaArticle();
+    } else if (url.includes('yandex.ru/news') && document.querySelector('article')) {
+      return getYandexArticle();
+    } else if (url.includes('e1.ru') && document.querySelector('[itemprop="articleBody"]')) {
+      return getE1Article();
+    } else if (url.includes('echo.msk.ru') && document.querySelector('div[itemprop="articleBody"]')) {
+      return getEchoMSKArticle();
+    }
 
+    let article = {};
     const readabilityArticle = new Readability(document.cloneNode(true)).parse();
     article.title = document.createElement('h1');
     article.title.innerHTML = await readabilityArticle.title
     article.content = await readabilityArticle.content;
 
-    console.log(readabilityArticle);
-    
-
     return await article;
   }
 
   function getYandexArticle() {
-      const $articleClone = document.querySelector('article').cloneNode(true);
-      const removeClasses = `
-        .news-story__head, .mg-carousel, h1, .news-story__socials, .mg-button, .mg-snippet__image,
-        .news-story__media-stack, .news-snippet-source-info__turbo-icon, .mg-story__doc-reference-img`;
+    const article = {};
+    const $articleContentClone = document.querySelector('article').cloneNode(true);
+    const removeClasses = `
+      .news-story__head, .mg-carousel, h1, .news-story__socials, .mg-button, .mg-snippet__image,
+      .news-story__media-stack, .news-snippet-source-info__turbo-icon, .mg-story__doc-reference-img`;
+    $articleContentClone.querySelectorAll(removeClasses).forEach(item => item.remove());
 
-      $articleClone.querySelectorAll(removeClasses).forEach(item => item.remove());
-
-      return $articleClone.innerHTML;
+    article.title = getTitle();
+    article.content = $articleContentClone.innerHTML;
+    return article;
   }
 
   function getE1Article() {
-    const $articleClone = document.querySelector('[itemprop="articleBody"]').cloneNode(true);
-    $articleClone.querySelectorAll('figcaption, .M1am9, .M1b3, .JDan3').forEach(item => item.remove());
+    const article = {};
+    const $articleContentClone = document.querySelector('[itemprop="articleBody"]').cloneNode(true);
+    $articleContentClone.querySelectorAll('figcaption, .M1am9, .M1b3, .JDan3, button').forEach(item => item.remove());
     
-    return $articleClone.innerHTML;
+    article.title = document.querySelector('h2[itemprop="headline"]').cloneNode(true);
+    article.content = $articleContentClone.innerHTML;
+    return article;
   }
 
   function getEchoMSKArticle() {
-    const $articleClone = document.querySelector('[itemprop="articleBody"]').cloneNode(true);
-    $articleClone.querySelectorAll('figcaption').forEach(item => item.remove());
+    const article = {};
+    const $articleContentClone = document.querySelector('[itemprop="articleBody"]').cloneNode(true);
+    $articleContentClone.querySelectorAll('figcaption').forEach(item => item.remove());
     
-    return $articleClone.innerHTML;
+    article.title = getTitle();
+    article.content = $articleContentClone.innerHTML;
+    return article;
   }
 
   function getFontankaArticle() {
-    const $articleClone = document.querySelector('section[itemprop="articleBody"]').cloneNode(true);
-    $articleClone.querySelectorAll('.plyr, .flickity-button, button, .A1f7').forEach(item => item.remove());
+    const article = {};
+
+    const $articleContentClone = document.querySelector('section[itemprop="articleBody"]').cloneNode(true);
+    $articleContentClone.querySelectorAll('.plyr, .flickity-button, button').forEach(item => item.remove());
     
-    return $articleClone.innerHTML;
+    const $articleImgs = $articleContentClone.querySelectorAll('[id*="images"]');
+    $articleImgs.forEach(($imgBlock) => {
+      const $next = $imgBlock.nextElementSibling;
+      if ($next.innerText.includes('Ссылка скопирована!')) {
+        $next.remove();
+      }
+    });
+
+    article.title = getTitle();
+    article.content = $articleContentClone.innerHTML;
+    return article;
   }
 
   function getTitle() {
@@ -149,26 +172,36 @@
   
     const $iframe = document.createElement('iframe');
     $iframe.className = 'simple-read simple-read_hide';
-    setTimeout(() => {
-      $iframe.classList.remove('simple-read_hide');
-    }, 400);
   
     document.body.appendChild($iframe);
     $iframe.contentWindow.focus();
 
+    const iframeWindow = $iframe.contentWindow;
+    const iframeDocument = iframeWindow.document;
+
+    setTimeout(() => {
+      $iframe.classList.remove('simple-read_hide');
+      
+      //To align the title height
+      const $title = iframeDocument.querySelector('h1');
+      const titleMargin = Math.ceil($title.clientHeight / 50) * 4;
+      $title.style.marginTop = `${titleMargin}px`;
+
+      const docHeight = iframeDocument.documentElement.clientHeight;
+      const maxScrollVal = Math.floor(docHeight / iframeWindow.innerHeight);
+      changeScrollCounter(iframeWindow, 1, maxScrollVal + 1);
+    }, 400);
+
     window.addEventListener('beforeunload', () => {
       voiceCancel();
     });
-  
-    const iframeWindow = $iframe.contentWindow;
-    const iframeDocument = iframeWindow.document;
 
     iframeDocument.head.innerHTML += getFrameFonts();
     addStylesheet(iframeDocument, 'css/iframe.css');
     
-    const $interface = getUI(iframeDocument);
-    iframeDocument.body.appendChild($interface);
+    const $interface = getUI(iframeWindow);
     iframeDocument.body.appendChild($blockBody);
+    iframeDocument.body.appendChild($interface);
 
     scrollAnchorLinks(iframeWindow);
     addAnchorToTitles(iframeDocument);
@@ -176,23 +209,16 @@
     const $links = iframeDocument.querySelectorAll('a:not([href*="#"]):not([target="_blank"])');
     fixNotAnchorLinks($links);
 
-    iframeWindow.addEventListener('click', (e) => {
-      contextMenuEvent(e, iframeWindow);
-    });
-
-    iframeWindow.addEventListener('mouseup', (e) => {
-      const $contextMenu = iframeDocument.querySelector('.context-menu');
-      if ($contextMenu) {
-        $contextMenu.remove();
-      }
-    });
+    iframeWindow.addEventListener('mouseup', contextMenuEvent);
   }
 
-  function contextMenuEvent(e, win) {
+  function contextMenuEvent(e) {
+    const win = this;
     const doc = win.document;
-
-    if (!doc || !e) {
-      return;
+    
+    const $contextMenu = doc.querySelector('.context-menu');
+    if ($contextMenu) {
+      $contextMenu.remove();
     }
 
     setTimeout(() => {
@@ -201,22 +227,24 @@
         return;
       }
 
-      const contextMenuOffsetX = 150;
-      const contextMenuOffsetY = 60;
+      const contextMenuOffsetX = 240;
+      const contextMenuOffsetY = 50;
       const coords = {};
 
-      if (e.clientX > (window.innerWidth - contextMenuOffsetX)) {
+      if (e.clientX > (win.innerWidth - contextMenuOffsetX)) {
         coords.x = e.clientX - contextMenuOffsetX;
+      } else if (e.clientX < contextMenuOffsetX) {
+        coords.x = e.clientX + contextMenuOffsetX / 2;
       } else {
         coords.x = e.clientX;
       }
 
-      if (e.layerY > (window.innerHeight - contextMenuOffsetY)) {
-        coords.y = e.layerY - contextMenuOffsetY;
-      } else if (e.layerY < contextMenuOffsetY) {
-        coords.y = contextMenuOffsetY;
+      if (e.clientY > (win.innerHeight - contextMenuOffsetY)) {
+        coords.y = e.pageY;
+      } else if (e.clientY < contextMenuOffsetY) {
+        coords.y = e.pageY + contextMenuOffsetY;
       } else {
-        coords.y = e.layerY;
+        coords.y = e.pageY;
       }
       
       const $contextMenu = getContextMenu(win, coords);
@@ -275,7 +303,9 @@
     });
   }
   
-  function getUI(doc) {
+  function getUI(win) {
+    const doc = win.document;
+
     const $ui = document.createElement('div');
     $ui.className = 'interface';
   
@@ -288,13 +318,79 @@
     const $bookmarksBtn = getBookmarksBtn();
     const $voiceBtn = getVoiceBtn(doc);
     const $closeBtn = getCloseBtn();
+    const $scrollCounter = getScrollCounter();
   
     $ui.appendChild($left);
     $ui.appendChild($voiceBtn);
     $ui.appendChild($bookmarksBtn);
     $ui.appendChild($closeBtn);
+    addScrollControls(win, $ui);
+    $ui.appendChild($scrollCounter);
   
     return $ui;
+  }
+
+  function addScrollControls(win, $parent) {
+    let thisScrollNum = 0;
+    const scrollValue = win.innerHeight - 12;
+    const $nextBtn = getNextBtn();
+    const $prevBtn = getPrevBtn();
+
+    win.addEventListener('scroll', () => {
+      const sumScrollValue = scrollValue * thisScrollNum;
+      const docHeight = win.document.documentElement.clientHeight;
+      const maxScrollVal = Math.floor(docHeight / win.innerHeight);
+      
+      if (sumScrollValue <= win.pageYOffset - scrollValue) {
+        thisScrollNum++;
+      } else if (sumScrollValue >= win.pageYOffset + scrollValue) {
+        thisScrollNum--;
+      } else if (docHeight - win.pageYOffset - win.innerHeight === 0 && thisScrollNum < maxScrollVal) {
+        thisScrollNum++;
+      }
+
+      changeScrollCounter(win, thisScrollNum + 1, maxScrollVal + 1);
+    });
+
+    win.addEventListener('keyup', (e) => {
+      if (e.keyCode === 39) {
+        scrollNextEvent();
+      } else if (e.keyCode === 37) {
+        scrollPrevEvent();
+      }
+    });
+    
+    $nextBtn.addEventListener('click', scrollNextEvent);
+    $prevBtn.addEventListener('click', scrollPrevEvent);
+
+    $parent.appendChild($nextBtn);
+    $parent.appendChild($prevBtn);
+
+    function scrollNextEvent() {
+      const docHeight = win.document.documentElement.clientHeight;
+      const maxScrollVal = Math.floor(docHeight / win.innerHeight);
+      
+      if (thisScrollNum >= maxScrollVal) {
+        return;
+      }
+
+      thisScrollNum++;
+      win.scrollTo(0, thisScrollNum * scrollValue + 5);
+      changeScrollCounter(win, thisScrollNum + 1, maxScrollVal + 1);
+    }
+
+    function scrollPrevEvent() {
+      if (thisScrollNum <= 0) {
+        return;
+      }
+
+      thisScrollNum--;
+      win.scrollTo(0, thisScrollNum * scrollValue + 5);
+
+      const docHeight = win.document.documentElement.clientHeight;
+      const maxScrollVal = Math.floor(docHeight / win.innerHeight);
+      changeScrollCounter(win, thisScrollNum + 1, maxScrollVal + 1);
+    }
   }
   
   function getCloseBtn() {
@@ -307,6 +403,35 @@
       voiceCancel();
     });
   
+    return $btn;
+  }
+
+  function getNextBtn() {
+    const $btn = document.createElement('button');
+    $btn.className = 'interface__btn interface__btn_next';
+    $btn.innerHTML = `
+    <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+        viewBox="0 0 490.8 490.8" style="enable-background:new 0 0 490.8 490.8;" xml:space="preserve">
+      <path d="M128.133,490.68c-5.891,0.011-10.675-4.757-10.686-10.648c-0.005-2.84,1.123-5.565,3.134-7.571l227.136-227.115
+          L120.581,18.232c-4.171-4.171-4.171-10.933,0-15.104c4.171-4.171,10.933-4.171,15.104,0l234.667,234.667
+          c4.164,4.165,4.164,10.917,0,15.083L135.685,487.544C133.685,489.551,130.967,490.68,128.133,490.68z"/>
+    </svg>`;
+
+    return $btn;
+  }
+
+  function getPrevBtn() {
+    const $btn = document.createElement('button');
+    $btn.className = 'interface__btn interface__btn_prev';
+    $btn.innerHTML = `
+      <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+          viewBox="0 0 490.787 490.787" xml:space="preserve">
+        <path d="M362.671,490.787c-2.831,0.005-5.548-1.115-7.552-3.115L120.452,253.006c-4.164-4.165-4.164-10.917,0-15.083L355.119,3.256
+            c4.093-4.237,10.845-4.354,15.083-0.262c4.237,4.093,4.354,10.845,0.262,15.083c-0.086,0.089-0.173,0.176-0.262,0.262
+            L143.087,245.454l227.136,227.115c4.171,4.16,4.179,10.914,0.019,15.085C368.236,489.664,365.511,490.792,362.671,490.787z"/>
+      </svg>
+    `;
+
     return $btn;
   }
   
@@ -366,6 +491,20 @@
     });
   
     return $btn;
+  }
+
+  function getScrollCounter() {
+    const $counter = document.createElement('div');
+    $counter.className = 'pages-count';
+    $counter.innerHTML = `1 / 1`;
+
+    return $counter;
+  }
+
+  function changeScrollCounter(win, from, to) {
+    const doc = win.document;
+    const $counter = doc.querySelector('.pages-count');
+    $counter.innerHTML = `${from} / ${to}`;
   }
   
   function getPath(url) {

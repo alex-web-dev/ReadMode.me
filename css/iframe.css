@@ -34,7 +34,7 @@ ul[class*="inline"] {
 }
 
 p {
-    margin: 20px 0;
+    margin: 25px 0;
     line-height: 1.6;
 }
 
@@ -52,7 +52,15 @@ img {
 }
 
 h1 {
-    font-size: 1.8em;
+    font-size: 1.83em;
+    margin: 0;
+    margin-top: 12px;
+}
+
+h3 {
+    font-size: 1.18em;
+    line-height: 25px;
+    padding: 0;
 }
 
 pre {
@@ -60,6 +68,7 @@ pre {
     background: #eceef0;
     padding: 15px;
     overflow: auto;
+    height: 300px;
 }
 
 table {
@@ -87,7 +96,7 @@ blockquote {
 figure {
     margin: 0;
     max-width: 100%;
-    margin: 20px 0;
+    margin: 25px 0;
     display: inline-flex;
 }
 
@@ -137,6 +146,32 @@ video {
 
 .interface__btn:not(:first-child) {
     margin-left: 15px;
+}
+
+.interface__btn_next, .interface__btn_prev {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    border: none;
+    width: 70px;
+    height: 70px;
+    outline: none;
+}
+
+.interface__btn_next {
+    right: 15px;
+}
+
+.interface__btn_prev {
+    left: 15px;
+}
+
+.interface__btn_next path, .interface__btn_prev path {
+    fill: #e0e0e0;
+}
+
+.interface__btn_next:hover path, .interface__btn_prev:hover path {
+    fill: rgb(255, 224, 0, 0.8);
 }
 
 .interface__btn_bookmarks {
@@ -427,6 +462,16 @@ section[style*="background-image"] {
     100% {
         transform: rotate(360deg);
     }
+}
+
+.pages-count {
+    position: fixed;
+    right: 15px;
+    bottom: 15px;
+    font-size: 14px;
+    color: #999;
+    z-index: 2;
+    font-family: sans-serif;
 }
 
 /*Yandex news*/
