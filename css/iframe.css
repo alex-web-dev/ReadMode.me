@@ -64,11 +64,9 @@ h3 {
 }
 
 pre {
-    border: 1px solid #cacdd1;
-    background: #eceef0;
-    padding: 15px;
+    border: 1px solid #dfdfdf;
     overflow: auto;
-    height: 300px;
+    padding: 10px 15px;
 }
 
 table {
@@ -134,7 +132,7 @@ video {
     justify-content: center;
     align-items: center;
     font-size: 28px;
-    transition: color .2s, border-color .2s;
+    transition: color .2s, border-color .2s, visibility .2s, opacity .2s;
     cursor: pointer;
     background: none;
 }
@@ -146,6 +144,11 @@ video {
 
 .interface__btn:not(:first-child) {
     margin-left: 15px;
+}
+
+.interface__btn_hide {
+    visibility: hidden;
+    opacity: 0;
 }
 
 .interface__btn_next, .interface__btn_prev {
@@ -411,24 +414,6 @@ section[style*="background-image"] {
     animation: fadeInOut 3s forwards;
 }
 
-@keyframes fadeInOut {
-    0% {
-        opacity: 0;
-    }
-
-    20% {
-        opacity: 1;
-    }
-
-    80% {
-        opacity: 1;
-    }
-
-    100% {
-        opacity: 0;
-    }
-}
-
 .mg-story__meta {
     display: block;
 }
@@ -449,6 +434,22 @@ section[style*="background-image"] {
     height: 40px;
 }
 
+.pages-count {
+    position: fixed;
+    right: 15px;
+    bottom: 15px;
+    font-size: 14px;
+    color: #999;
+    z-index: 2;
+    font-family: sans-serif;
+    animation: fadeInSlow 1.5s forwards;
+}
+
+/*Yandex news*/
+.news-snippet-source-info__time {
+    margin: 0 5px;
+}
+
 
 @keyframes rotate {
     0% {
@@ -464,17 +465,34 @@ section[style*="background-image"] {
     }
 }
 
-.pages-count {
-    position: fixed;
-    right: 15px;
-    bottom: 15px;
-    font-size: 14px;
-    color: #999;
-    z-index: 2;
-    font-family: sans-serif;
+@keyframes fadeInSlow {
+    0% {
+        opacity: 0;
+    }
+
+    50% {
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 1;
+    }
 }
 
-/*Yandex news*/
-.news-snippet-source-info__time {
-    margin: 0 5px;
+@keyframes fadeInOut {
+    0% {
+        opacity: 0;
+    }
+
+    20% {
+        opacity: 1;
+    }
+
+    80% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0;
+    }
 }

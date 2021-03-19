@@ -3,6 +3,10 @@
   if(!document.querySelector('.simple-read')) {
     addTrackingScript();
     createFrame();
+
+    window.addEventListener('beforeunload', () => {
+      voiceCancel();
+    });
   }
 
   function addTrackingScript() {
@@ -48,13 +52,22 @@
   }
   
   function addStylesheet(doc, url) {
-    const path = chrome.extension.getURL(url);
+    const path = getPath(url);
     const style = document.createElement('link');
     style.rel   = 'stylesheet';
     style.type  = 'text/css';
     style.href  = path;
   
     doc.head.appendChild(style);
+  }
+
+  function addScript(doc, url) {
+    const path = getPath(url);
+    const script = document.querySelector('script');
+    script.type = 'text/javascript';
+    script.src = getPath('js/tracking.js');
+
+    doc.head.appendChild(script);
   }
 
   async function getArticle() {
@@ -71,7 +84,9 @@
     }
 
     let article = {};
-    const readabilityArticle = new Readability(document.cloneNode(true)).parse();
+    const readabilityArticle = new Readability(document.cloneNode(true), {
+      keepClasses: true
+    }).parse();
     article.title = document.createElement('h1');
     article.title.innerHTML = await readabilityArticle.title
     article.content = await readabilityArticle.content;
@@ -114,7 +129,6 @@
 
   function getFontankaArticle() {
     const article = {};
-
     const $articleContentClone = document.querySelector('section[itemprop="articleBody"]').cloneNode(true);
     $articleContentClone.querySelectorAll('.plyr, .flickity-button, button').forEach(item => item.remove());
     
@@ -179,37 +193,42 @@
     const iframeWindow = $iframe.contentWindow;
     const iframeDocument = iframeWindow.document;
 
-    setTimeout(() => {
-      $iframe.classList.remove('simple-read_hide');
-      
-      //To align the title height
-      const $title = iframeDocument.querySelector('h1');
-      const titleMargin = Math.ceil($title.clientHeight / 50) * 4;
-      $title.style.marginTop = `${titleMargin}px`;
 
-      const docHeight = iframeDocument.documentElement.clientHeight;
-      const maxScrollVal = Math.floor(docHeight / iframeWindow.innerHeight);
-      changeScrollCounter(iframeWindow, 1, maxScrollVal + 1);
-    }, 400);
-
-    window.addEventListener('beforeunload', () => {
-      voiceCancel();
-    });
-
-    iframeDocument.head.innerHTML += getFrameFonts();
-    addStylesheet(iframeDocument, 'css/iframe.css');
-    
     const $interface = getUI(iframeWindow);
     iframeDocument.body.appendChild($blockBody);
     iframeDocument.body.appendChild($interface);
 
-    scrollAnchorLinks(iframeWindow);
-    addAnchorToTitles(iframeDocument);
+    addFrameEvents($iframe);
+    addFrameSettings($iframe);
+  }
 
-    const $links = iframeDocument.querySelectorAll('a:not([href*="#"]):not([target="_blank"])');
+  function addFrameEvents($iframe) {
+    const win = $iframe.contentWindow;
+    const doc = $iframe.contentDocument;
+
+    win.addEventListener('load', () => {
+      $iframe.classList.remove('simple-read_hide');
+      //To align the title height
+      const $title = doc.querySelector('h1');
+      const titleMargin = Math.ceil($title.clientHeight / 50) * 4;
+      $title.style.marginTop = `${titleMargin}px`;
+    });
+
+    win.addEventListener('mouseup', contextMenuEvent);
+  }
+
+  function addFrameSettings($iframe) {
+    const win = $iframe.contentWindow;
+    const doc = $iframe.contentDocument;
+
+    doc.head.innerHTML += getFrameFonts();
+    addStylesheet(doc, 'css/iframe.css');
+    addStylesheet(doc, 'css/atom-one-light.css');
+    scrollAnchorLinks(win);
+    addAnchorToTitles(doc);
+
+    const $links = doc.querySelectorAll('a:not([href*="#"]):not([target="_blank"])');
     fixNotAnchorLinks($links);
-
-    iframeWindow.addEventListener('mouseup', contextMenuEvent);
   }
 
   function contextMenuEvent(e) {
@@ -220,6 +239,11 @@
     if ($contextMenu) {
       $contextMenu.remove();
     }
+
+    if (typeof e.target.className === 'object' || e.target.className.includes('context-menu')) {
+      return;
+    }
+    
 
     setTimeout(() => {
       const selectionText = win.getSelection().toString().trim();
@@ -331,28 +355,63 @@
   }
 
   function addScrollControls(win, $parent) {
-    let thisScrollNum = 0;
-    const scrollValue = win.innerHeight - 12;
+    let thisPageNum = 1;
     const $nextBtn = getNextBtn();
     const $prevBtn = getPrevBtn();
 
+    win.onload = () => {
+      setTimeout(() => {
+        const docHeight = win.document.documentElement.clientHeight;
+        const scrollValue = win.innerHeight - 12;
+        let maxScrollVal = Math.ceil(docHeight / scrollValue);    
+
+        if (docHeight - win.innerHeight === 0) {
+          maxScrollVal = 1;    
+        } else {
+          $nextBtn.classList.remove('interface__btn_hide');
+        }
+        
+        changeScrollCounter(win, 1, maxScrollVal);
+      }, 600);
+    }
+
     win.addEventListener('scroll', () => {
-      const sumScrollValue = scrollValue * thisScrollNum;
+      const scrollValue = win.innerHeight - 12;
       const docHeight = win.document.documentElement.clientHeight;
-      const maxScrollVal = Math.floor(docHeight / win.innerHeight);
-      
-      if (sumScrollValue <= win.pageYOffset - scrollValue) {
-        thisScrollNum++;
-      } else if (sumScrollValue >= win.pageYOffset + scrollValue) {
-        thisScrollNum--;
-      } else if (docHeight - win.pageYOffset - win.innerHeight === 0 && thisScrollNum < maxScrollVal) {
-        thisScrollNum++;
+      const maxScrollVal = Math.ceil(docHeight / scrollValue);
+      const scrollOffset = Math.ceil(win.pageYOffset / scrollValue);
+
+      thisPageNum = scrollOffset !== 0 ? scrollOffset : 1;
+      if (docHeight - win.pageYOffset - win.innerHeight === 0 && thisPageNum < maxScrollVal) {
+        thisPageNum++;
       }
 
-      changeScrollCounter(win, thisScrollNum + 1, maxScrollVal + 1);
+      $prevBtn.classList.remove('interface__btn_hide');
+      $nextBtn.classList.remove('interface__btn_hide');
+      if (thisPageNum === 1) {
+        $prevBtn.classList.add('interface__btn_hide');
+      } else if (thisPageNum === maxScrollVal) {
+        $nextBtn.classList.add('interface__btn_hide');
+      }
+
+      changeScrollCounter(win, thisPageNum, maxScrollVal);
     });
 
-    win.addEventListener('keyup', (e) => {
+    win.addEventListener('resize', () => {
+      const scrollValue = win.innerHeight - 12;
+      const docHeight = win.document.documentElement.clientHeight;
+      let maxScrollVal = Math.ceil(docHeight / scrollValue);
+
+      if (docHeight - window.innerHeight === 0) {
+        $prevBtn.classList.add('interface__btn_hide');
+        $nextBtn.classList.add('interface__btn_hide');
+        maxScrollVal = thisPageNum = 1;
+      }
+
+      changeScrollCounter(win, thisPageNum, maxScrollVal);
+    });
+
+    win.addEventListener('keydown', (e) => {
       if (e.keyCode === 39) {
         scrollNextEvent();
       } else if (e.keyCode === 37) {
@@ -367,29 +426,31 @@
     $parent.appendChild($prevBtn);
 
     function scrollNextEvent() {
+      const scrollValue = win.innerHeight - 12;
       const docHeight = win.document.documentElement.clientHeight;
-      const maxScrollVal = Math.floor(docHeight / win.innerHeight);
+      const maxScrollVal = Math.ceil(docHeight / scrollValue);
       
-      if (thisScrollNum >= maxScrollVal) {
+      if (thisPageNum >= maxScrollVal) {
         return;
       }
 
-      thisScrollNum++;
-      win.scrollTo(0, thisScrollNum * scrollValue + 5);
-      changeScrollCounter(win, thisScrollNum + 1, maxScrollVal + 1);
+      thisPageNum++;
+      win.scrollTo(0, (thisPageNum - 1) * scrollValue + 5);
+      changeScrollCounter(win, thisPageNum, maxScrollVal);
     }
 
     function scrollPrevEvent() {
-      if (thisScrollNum <= 0) {
+      const scrollValue = win.innerHeight - 12;
+      const docHeight = win.document.documentElement.clientHeight;
+      const maxScrollVal = Math.ceil(docHeight / scrollValue);
+      
+      if (thisPageNum <= 1) {
         return;
       }
 
-      thisScrollNum--;
-      win.scrollTo(0, thisScrollNum * scrollValue + 5);
-
-      const docHeight = win.document.documentElement.clientHeight;
-      const maxScrollVal = Math.floor(docHeight / win.innerHeight);
-      changeScrollCounter(win, thisScrollNum + 1, maxScrollVal + 1);
+      thisPageNum--;
+      win.scrollTo(0, (thisPageNum - 1) * scrollValue + 5);
+      changeScrollCounter(win, thisPageNum, maxScrollVal);
     }
   }
   
@@ -408,7 +469,7 @@
 
   function getNextBtn() {
     const $btn = document.createElement('button');
-    $btn.className = 'interface__btn interface__btn_next';
+    $btn.className = 'interface__btn interface__btn_next interface__btn_hide';
     $btn.innerHTML = `
     <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
         viewBox="0 0 490.8 490.8" style="enable-background:new 0 0 490.8 490.8;" xml:space="preserve">
@@ -422,7 +483,7 @@
 
   function getPrevBtn() {
     const $btn = document.createElement('button');
-    $btn.className = 'interface__btn interface__btn_prev';
+    $btn.className = 'interface__btn interface__btn_prev interface__btn_hide';
     $btn.innerHTML = `
       <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
           viewBox="0 0 490.787 490.787" xml:space="preserve">
@@ -513,8 +574,7 @@
   
   function getFrameFonts() {
     return `
-      <link rel="preconnect" href="https://fonts.gstatic.com">
-      <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700;900&display=swap" rel="stylesheet">';
+      <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700" rel="stylesheet">'
     `;
   }
   
