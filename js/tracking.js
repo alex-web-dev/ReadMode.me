@@ -1,22 +1,17 @@
-(function() {
-  var ga = document.createElement('script');
-  ga.type = 'text/javascript';
-  ga.async = true;
-  ga.src = 'https://www.googletagmanager.com/gtag/js?id=G-6TWKPEBEBM';
-  var s = document.getElementsByTagName('script')[0];
-  s.parentNode.insertBefore(ga, s);
-})();
-
 window.dataLayer = window.dataLayer || [];
 function gtag(){dataLayer.push(arguments);}
 gtag('js', new Date());
 
-gtag('config', 'G-6TWKPEBEBM');
+gtag('config', 'G-TH63NYZNGT');
 
-window.$iframeDoc = document.querySelector('.simple-read').contentWindow.document;
+var $iframeDoc = document.querySelector('.simple-read').contentWindow.document;
 
-window.$bookmarksBtn = $iframeDoc.querySelector('.interface__btn_bookmarks');
+var $bookmarksBtn = $iframeDoc.querySelector('.interface__btn_bookmarks');
 $bookmarksBtn.addEventListener('click', () => {
+  if (!isTracking()) {
+    return;
+  }
+  
   if( $bookmarksBtn.className.includes('interface__btn_bookmarks_active')) {
     gtag('event', 'click', {
       'event_category': 'Bookmarks',
@@ -30,16 +25,24 @@ $bookmarksBtn.addEventListener('click', () => {
   }
 });
 
-window.$bookmarksPopupBtn = $iframeDoc.querySelector('.interface__btn_bookmarks-popup');
+var $bookmarksPopupBtn = $iframeDoc.querySelector('.interface__btn_bookmarks-popup');
 $bookmarksPopupBtn.addEventListener('click', () => {
+  if (!isTracking()) {
+    return;
+  }
+  
   gtag('event', 'click', {
     'event_category': 'Bookmarks list',
     'event_label': 'open'
   });
 });
 
-window.$voiceBtn = $iframeDoc.querySelector('.interface__btn_voice');
+var $voiceBtn = $iframeDoc.querySelector('.interface__btn_voice');
 $voiceBtn.addEventListener('click', () => {
+  if (!isTracking()) {
+    return;
+  }
+
   if ($voiceBtn.dataset.voice) {
     gtag('event', 'click', {
       'event_category': 'Voice',
@@ -53,9 +56,25 @@ $voiceBtn.addEventListener('click', () => {
   }
 });
 
-window.$closeBtn = $iframeDoc.querySelector('.interface__btn_close');
+var $closeBtn = $iframeDoc.querySelector('.interface__btn_close');
 $closeBtn.addEventListener('click', () => {
+  if (!isTracking()) {
+    return;
+  }
+  
   gtag('event', 'click', {
     'event_category': 'Close'
   });
 });
+
+
+function isTracking() {
+  var analyticsURL = "https://www.googletagmanager.com/gtag/js?id=G-TH63NYZNG1T";
+  var analyticsScript = document.querySelector(`script[src="${analyticsURL}"]`);
+
+  if (analyticsScript) {
+    return true;
+  }
+
+  return false;
+}

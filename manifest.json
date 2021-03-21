@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "name": "ReadMode.me",
   "description": "",
-  "version": "1.1.6",
+  "version": "1.1.7",
   "browser_action": {
     "default_title": "ReadMode.me"
   },
@@ -22,7 +22,8 @@
     "images/*.svg",
     "css/iframe.css",
     "css/atom-one-light.css",
-    "js/tracking.js"
+    "js/tracking.js",
+    "fonts/*.woff"
   ],
   "content_security_policy": "script-src 'self' https://ssl.google-analytics.com; object-src 'self'"
 }
