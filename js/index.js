@@ -1,7 +1,6 @@
 (() => {
-
+  
   if(!document.querySelector('.simple-read')) {
-    addTrackingScript();
     createFrame();
 
     window.addEventListener('beforeunload', () => {
@@ -10,16 +9,16 @@
   }
 
   function addTrackingScript() {
-    const $oldTracking = document.querySelector('script[src*="js/tracking.js"]');
-    if ($oldTracking) {
-      $oldTracking.remove();
-    }
-
     const $tracking = document.createElement('script');
     $tracking.type = 'text/javascript';
     $tracking.src = getPath('js/tracking.js');
-    const $s = document.getElementsByTagName('script')[0];
-    $s.parentNode.insertBefore($tracking, $s);
+
+    const $analytics = document.createElement('script');
+    $analytics.type = 'text/javascript';
+    $analytics.src = 'https://www.googletagmanager.com/gtag/js?id=G-TH63NYZNGT';
+
+    document.head.appendChild($analytics);
+    document.head.appendChild($tracking);
   }
   
   function createFrame() {
@@ -212,6 +211,8 @@
       const $title = doc.querySelector('h1');
       const titleMargin = Math.ceil($title.clientHeight / 50) * 4;
       $title.style.marginTop = `${titleMargin}px`;
+
+      addTrackingScript();
     });
 
     win.addEventListener('mouseup', contextMenuEvent);
@@ -221,7 +222,7 @@
     const win = $iframe.contentWindow;
     const doc = $iframe.contentDocument;
 
-    doc.head.innerHTML += getFrameFonts();
+    // doc.head.innerHTML += getFrameFonts();
     addStylesheet(doc, 'css/iframe.css');
     addStylesheet(doc, 'css/atom-one-light.css');
     scrollAnchorLinks(win);
