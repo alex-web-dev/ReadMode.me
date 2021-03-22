@@ -2,7 +2,7 @@ window.dataLayer = window.dataLayer || [];
 function gtag(){dataLayer.push(arguments);}
 gtag('js', new Date());
 
-gtag('config', 'G-TH63NYZNGT');
+gtag('config', 'G-6TWKPEBEBM');
 
 var $iframeDoc = document.querySelector('.simple-read').contentWindow.document;
 
@@ -69,7 +69,7 @@ $closeBtn.addEventListener('click', () => {
 
 
 function isTracking() {
-  var analyticsURL = "https://www.googletagmanager.com/gtag/js?id=G-TH63NYZNG1T";
+  var analyticsURL = 'https://www.googletagmanager.com/gtag/js?id=G-6TWKPEBEBM';
   var analyticsScript = document.querySelector(`script[src="${analyticsURL}"]`);
 
   if (analyticsScript) {

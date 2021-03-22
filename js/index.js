@@ -1,5 +1,5 @@
 (() => {
-  
+
   if(!document.querySelector('.simple-read')) {
     createFrame();
 
@@ -15,7 +15,7 @@
 
     const $analytics = document.createElement('script');
     $analytics.type = 'text/javascript';
-    $analytics.src = 'https://www.googletagmanager.com/gtag/js?id=G-TH63NYZNGT';
+    $analytics.src = 'https://www.googletagmanager.com/gtag/js?id=G-6TWKPEBEBM';
 
     document.head.appendChild($analytics);
     document.head.appendChild($tracking);
@@ -197,32 +197,25 @@
     iframeDocument.body.appendChild($blockBody);
     iframeDocument.body.appendChild($interface);
 
-    addFrameEvents($iframe);
     addFrameSettings($iframe);
-  }
 
-  function addFrameEvents($iframe) {
-    const win = $iframe.contentWindow;
-    const doc = $iframe.contentDocument;
-
-    win.addEventListener('load', () => {
+    setTimeout(() => {
       $iframe.classList.remove('simple-read_hide');
       //To align the title height
-      const $title = doc.querySelector('h1');
+      const $title = iframeDocument.querySelector('h1');
       const titleMargin = Math.ceil($title.clientHeight / 50) * 4;
       $title.style.marginTop = `${titleMargin}px`;
 
       addTrackingScript();
-    });
+    }, 500);
 
-    win.addEventListener('mouseup', contextMenuEvent);
+    iframeWindow.addEventListener('mouseup', contextMenuEvent);
   }
 
   function addFrameSettings($iframe) {
     const win = $iframe.contentWindow;
     const doc = $iframe.contentDocument;
 
-    // doc.head.innerHTML += getFrameFonts();
     addStylesheet(doc, 'css/iframe.css');
     addStylesheet(doc, 'css/atom-one-light.css');
     scrollAnchorLinks(win);
@@ -235,7 +228,7 @@
   function contextMenuEvent(e) {
     const win = this;
     const doc = win.document;
-    
+
     const $contextMenu = doc.querySelector('.context-menu');
     if ($contextMenu) {
       $contextMenu.remove();
@@ -283,8 +276,8 @@
         const $titlePrev = $title.previousElementSibling;
         if ($titlePrev && $titlePrev.getAttribute('name') && !$title.getAttribute('name')) {
           titlesAnchorsArray.push({
-            text: $title.innerText ?? '',
-            anchor: $titlePrev.getAttribute('name') ?? ''
+            text: $title.innerText || '',
+            anchor: $titlePrev.getAttribute('name') || ''
           });
         }
     });
@@ -360,21 +353,19 @@
     const $nextBtn = getNextBtn();
     const $prevBtn = getPrevBtn();
 
-    win.onload = () => {
-      setTimeout(() => {
-        const docHeight = win.document.documentElement.clientHeight;
-        const scrollValue = win.innerHeight - 12;
-        let maxScrollVal = Math.ceil(docHeight / scrollValue);    
+    setTimeout(() => {
+      const docHeight = win.document.documentElement.clientHeight;
+      const scrollValue = win.innerHeight - 12;
+      let maxScrollVal = Math.ceil(docHeight / scrollValue);    
 
-        if (docHeight - win.innerHeight === 0) {
-          maxScrollVal = 1;    
-        } else {
-          $nextBtn.classList.remove('interface__btn_hide');
-        }
-        
-        changeScrollCounter(win, 1, maxScrollVal);
-      }, 600);
-    }
+      if (docHeight - win.innerHeight === 0) {
+        maxScrollVal = 1;    
+      } else {
+        $nextBtn.classList.remove('interface__btn_hide');
+      }
+      
+      changeScrollCounter(win, 1, maxScrollVal);
+    }, 1000);
 
     win.addEventListener('scroll', () => {
       const scrollValue = win.innerHeight - 12;
