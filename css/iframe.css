@@ -198,6 +198,11 @@ video {
     fill: rgb(255, 224, 0, 0.8);
 }
 
+.interface__btn_next svg, .interface__btn_prev svg {
+    height: 55px;
+}
+
+
 .interface__btn_bookmarks {
     transition: border .3s, outline .3s;
 }
